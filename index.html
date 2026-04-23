@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hydrate — Water Intake Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --b50: #E6F1FB; --b100: #B5D4F4; --b200: #85B7EB;
+    --b400: #378ADD; --b600: #185FA5; --b800: #0C447C; --b900: #042C53;
+    --t50: #E1F5EE; --t100: #9FE1CB; --t200: #5DCAA5; --t400: #1D9E75; --t600: #0F6E56;
+    --bg: #EEF6FD; --card: #ffffff;
+    --text: #042C53; --muted: #185FA5; --border: #B5D4F4;
+    --radius: 16px; --radius-sm: 10px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% -10%, #cde8fb55, transparent),
+      radial-gradient(ellipse 60% 40% at 80% 110%, #9FE1CB33, transparent);
+  }
+
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    padding: 3.5rem 1rem 2rem;
+    position: relative;
+  }
+  .header-wave {
+    position: absolute; bottom: -1px; left: 0; width: 100%; overflow: hidden; line-height: 0;
+  }
+  .header-wave svg { display: block; width: 100%; }
+  .site-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(38px, 7vw, 60px);
+    font-weight: 400;
+    color: var(--b900);
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+  .site-title em { font-style: italic; color: var(--b600); }
+  .site-sub {
+    font-size: 15px; color: var(--muted); margin-top: 8px;
+    font-weight: 300; letter-spacing: 0.02em;
+  }
+  .drop-icon {
+    font-size: 40px; display: block; margin-bottom: 10px;
+    animation: bob 3s ease-in-out infinite;
+  }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 4px 24px #185FA508;
+  }
+
+  /* ── GOAL SETTING ── */
+  .goal-row {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 1.25rem;
+  }
+  .goal-row label { font-size: 13px; color: var(--muted); white-space: nowrap; font-weight: 500; }
+  .goal-row input {
+    width: 110px; padding: 8px 12px;
+    border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); background: var(--b50); outline: none;
+    transition: border-color 0.15s;
+  }
+  .goal-row input:focus { border-color: var(--b400); }
+  .goal-row .hint { font-size: 12px; color: var(--b200); font-style: italic; }
+
+  /* ── PROGRESS ── */
+  .progress-header {
+    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;
+  }
+  .big-num { font-size: 34px; font-weight: 600; color: var(--b600); line-height: 1; }
+  .big-num span { font-size: 14px; font-weight: 400; color: var(--muted); margin-left: 2px; }
+  .remaining { font-size: 13px; color: var(--muted); }
+  .track-bar {
+    height: 18px; border-radius: 99px;
+    background: var(--b50); border: 0.5px solid var(--border); overflow: hidden;
+  }
+  .track-fill {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--b400), #5DCAA5);
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    position: relative;
+  }
+  .track-fill::after {
+    content: ''; position: absolute; top: 3px; left: 8px; right: 8px; height: 4px;
+    border-radius: 99px; background: rgba(255,255,255,0.4);
+  }
+  .pct-row {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--muted); margin-top: 6px;
+  }
+
+  /* ── CONGRATS ── */
+  .congrats {
+    background: var(--t50); border: 0.5px solid var(--t200); border-radius: 12px;
+    padding: 14px 18px; font-size: 14px; color: var(--t600);
+    margin-bottom: 1.25rem; display: none; text-align: center; font-weight: 500;
+    animation: fadeIn 0.4s ease;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 11px; font-weight: 600; color: var(--b200);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;
+  }
+
+  /* ── BOTTLES ── */
+  .bottles-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .bottle-btn {
+    background: var(--card); border: 0.5px solid var(--border); border-radius: 14px;
+    padding: 16px 10px 12px; cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .bottle-btn:hover {
+    border-color: var(--b400); background: var(--b50);
+    transform: translateY(-3px); box-shadow: 0 6px 18px #378ADD1A;
+  }
+  .bottle-btn:active { transform: scale(0.96); }
+  .bottle-svg-wrap { width: 40px; height: 56px; }
+  .bottle-name { font-size: 12px; font-weight: 500; color: var(--b800); }
+  .bottle-ml-label { font-size: 11px; color: var(--muted); }
+
+  /* ── CUSTOM ADD ── */
+  .custom-add { display: flex; gap: 10px; }
+  .custom-add input {
+    flex: 1; padding: 11px 14px;
+    border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); background: var(--card); outline: none;
+    transition: border-color 0.15s;
+  }
+  .custom-add input:focus { border-color: var(--b400); }
+  .add-btn {
+    padding: 11px 22px; background: var(--b600); color: #fff;
+    border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .add-btn:hover { background: var(--b800); }
+
+  /* ── LOG ── */
+  .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .log-title { font-size: 15px; font-weight: 500; color: var(--b800); }
+  .clear-btn {
+    font-size: 12px; color: var(--muted); cursor: pointer; background: none;
+    border: none; font-family: 'DM Sans', sans-serif; padding: 4px 8px;
+    border-radius: 6px; transition: background 0.1s;
+  }
+  .clear-btn:hover { background: var(--b50); color: var(--b600); }
+  .log-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px 0; }
+  .log-list { display: flex; flex-direction: column; gap: 7px; max-height: 260px; overflow-y: auto; }
+  .log-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 12px; background: var(--b50); border-radius: 9px;
+    animation: fadeIn 0.25s ease;
+  }
+  .log-item-left { display: flex; align-items: center; gap: 8px; }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--b400); flex-shrink: 0; }
+  .log-item-ml { font-size: 14px; font-weight: 500; color: var(--b800); }
+  .log-item-meta { font-size: 11px; color: var(--muted); }
+  .log-item-del {
+    background: none; border: none; cursor: pointer; font-size: 13px;
+    color: var(--b200); padding: 2px 4px; line-height: 1; border-radius: 4px;
+    transition: color 0.1s;
+  }
+  .log-item-del:hover { color: #E24B4A; }
+
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:none} }
+
+  /* ── FACTS SECTION ── */
+  .facts-section { margin-top: 2.5rem; }
+  .facts-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px; font-weight: 400; color: var(--b900);
+    margin-bottom: 6px; letter-spacing: -0.3px;
+  }
+  .facts-intro { font-size: 14px; color: var(--muted); margin-bottom: 1.5rem; font-weight: 300; }
+
+  .facts-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px;
+  }
+  .fact-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .fact-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--b400), var(--t200));
+  }
+  .fact-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px #378ADD14; }
+  .fact-illus {
+    font-size: 44px; display: block; margin-bottom: 10px;
+    line-height: 1; text-align: center;
+  }
+  .fact-stat {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 500; color: var(--b600);
+    margin-bottom: 4px; text-align: center;
+  }
+  .fact-label {
+    font-size: 12px; font-weight: 600; color: var(--b200);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    text-align: center; margin-bottom: 10px;
+  }
+  .fact-text { font-size: 13px; color: var(--muted); line-height: 1.6; text-align: center; }
+
+  /* ── BODY WATER VISUAL ── */
+  .body-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin-top: 14px;
+  }
+  .body-card-title {
+    font-size: 14px; font-weight: 500; color: var(--b800); margin-bottom: 14px;
+  }
+  .organ-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .organ-icon { font-size: 22px; width: 32px; text-align: center; flex-shrink: 0; }
+  .organ-name { font-size: 13px; color: var(--muted); width: 90px; flex-shrink: 0; }
+  .organ-bar-wrap { flex: 1; height: 10px; background: var(--b50); border-radius: 99px; overflow: hidden; }
+  .organ-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--b400), #5DCAA5); }
+  .organ-pct { font-size: 12px; font-weight: 600; color: var(--b600); width: 36px; text-align: right; flex-shrink: 0; }
+
+  /* ── TIPS STRIP ── */
+  .tips-strip {
+    background: linear-gradient(135deg, var(--b600) 0%, var(--t400) 100%);
+    border-radius: var(--radius); padding: 1.5rem; margin-top: 14px; color: #fff;
+  }
+  .tips-strip h3 { font-size: 16px; font-weight: 500; margin-bottom: 12px; opacity: 0.95; }
+  .tips-list { display: flex; flex-direction: column; gap: 9px; }
+  .tip-item { display: flex; gap: 10px; align-items: flex-start; }
+  .tip-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.7); flex-shrink: 0; margin-top: 6px; }
+  .tip-text { font-size: 13px; opacity: 0.9; line-height: 1.5; }
+
+  /* ── SCROLL BAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="drop-icon">💧</span>
+  <h1 class="site-title"><em>Hydrate</em> — Water Tracker</h1>
+  <p class="site-sub">Drink well. Feel great. One sip at a time.</p>
+  <div class="header-wave">
+    <svg viewBox="0 0 1440 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z" fill="#EEF6FD"/>
+    </svg>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- GOAL SETTING -->
+  <div class="goal-row">
+    <label for="goalInput">Daily goal</label>
+    <input type="number" id="goalInput" value="2500" min="500" max="6000" step="50" />
+    <span style="font-size:13px;color:var(--muted)">ml</span>
+    <span class="hint">Recommended: 2000–3000 ml/day</span>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="card">
+    <div class="progress-header">
+      <div class="big-num" id="intakeDisplay">0 <span>ml</span></div>
+      <div class="remaining" id="remaining">2500 ml to go</div>
+    </div>
+    <div class="track-bar">
+      <div class="track-fill" id="trackFill" style="width:0%"></div>
+    </div>
+    <div class="pct-row">
+      <span id="pctLabel">0% of goal</span>
+      <span id="goalLabel">Goal: 2500 ml</span>
+    </div>
+  </div>
+
+  <div class="congrats" id="congrats">🎉 You hit your goal today! Your body thanks you.</div>
+
+  <!-- BOTTLE QUICK ADD -->
+  <div class="section-label">Quick add — tap a bottle</div>
+  <div class="bottles-grid" id="bottlesGrid"></div>
+
+  <!-- CUSTOM ADD -->
+  <div class="card">
+    <div class="section-label" style="margin-bottom:10px">Custom amount</div>
+    <div class="custom-add">
+      <input type="number" id="customMl" placeholder="Enter ml (e.g. 450)" min="10" max="3000" />
+      <button class="add-btn" onclick="addCustom()">+ Add</button>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="card">
+    <div class="log-header">
+      <span class="log-title">Today's log</span>
+      <button class="clear-btn" onclick="clearAll()">Clear all</button>
+    </div>
+    <div id="logList"><div class="log-empty">No entries yet — start drinking! 💧</div></div>
+  </div>
+
+  <!-- ─── FACTS SECTION ─── -->
+  <div class="facts-section">
+    <h2 class="facts-title">Why water matters</h2>
+    <p class="facts-intro">Your body is mostly water — here's why every sip counts.</p>
+
+    <div class="facts-grid">
+
+      <div class="fact-card">
+        <span class="fact-illus">🧠</span>
+        <div class="fact-stat">75%</div>
+        <div class="fact-label">Brain is water</div>
+        <div class="fact-text">Your brain is three-quarters water. Even mild dehydration of 1–2% can impair concentration, memory, and mood.</div>
+      </div>
+
+      <div class="fact-card">
+        <span class="fact-illus">🩸</span>
+        <div class="fact-stat">90%</div>
+        <div class="fact-label">Blood is water</div>
+        <div class="fact-text">Blood is about 90% water, carrying oxygen and nutrients to every cell in your body. Stay hydrated, stay energised.</div>
+      </div>
+
+      <div class="fact-card">
+        <span class="fact-illus">⚡</span>
+        <div class="fact-stat">+30%</div>
+        <div class="fact-label">Metabolism boost</div>
+        <div class="fact-text">Drinking 500 ml of water can boost your metabolic rate by up to 30% for about 40 minutes, helping calorie burn.</div>
+      </div>
+
+      <div class="fact-card">
+        <span class="fact-illus">🦷</span>
+        <div class="fact-stat">2L</div>
+        <div class="fact-label">Daily kidneys filter</div>
+        <div class="fact-text">Your kidneys filter around 200 litres of blood daily and need adequate water to flush out toxins and waste.</div>
+      </div>
+
+      <div class="fact-card">
+        <span class="fact-illus">🏃</span>
+        <div class="fact-stat">-2%</div>
+        <div class="fact-label">Performance drop</div>
+        <div class="fact-text">Losing just 2% of body weight in sweat can cause a noticeable drop in physical and cognitive performance.</div>
+      </div>
+
+      <div class="fact-card">
+        <span class="fact-illus">✨</span>
+        <div class="fact-stat">skin</div>
+        <div class="fact-label">Glow up</div>
+        <div class="fact-text">Drinking enough water keeps skin elastic and radiant. Dehydration makes skin look dull, dry, and more prone to wrinkles.</div>
+      </div>
+
+      <div class="fact-card">
+        <span class="fact-illus">🌡️</span>
+        <div class="fact-stat">37°C</div>
+        <div class="fact-label">Body temp control</div>
+        <div class="fact-text">Water regulates your core body temperature through perspiration. Without it, overheating becomes a real risk.</div>
+      </div>
+
+      <div class="fact-card">
+        <span class="fact-illus">💪</span>
+        <div class="fact-stat">80%</div>
+        <div class="fact-label">Muscles are water</div>
+        <div class="fact-text">Muscles are about 80% water. Hydration prevents cramps, keeps joints lubricated, and speeds up muscle recovery.</div>
+      </div>
+
+    </div>
+
+    <!-- BODY WATER BREAKDOWN -->
+    <div class="body-card">
+      <div class="body-card-title">💧 Water content in your body</div>
+
+      <div class="organ-row">
+        <span class="organ-icon">🧠</span>
+        <span class="organ-name">Brain</span>
+        <div class="organ-bar-wrap"><div class="organ-bar" style="width:75%"></div></div>
+        <span class="organ-pct">75%</span>
+      </div>
+      <div class="organ-row">
+        <span class="organ-icon">🩸</span>
+        <span class="organ-name">Blood</span>
+        <div class="organ-bar-wrap"><div class="organ-bar" style="width:90%"></div></div>
+        <span class="organ-pct">90%</span>
+      </div>
+      <div class="organ-row">
+        <span class="organ-icon">🫁</span>
+        <span class="organ-name">Lungs</span>
+        <div class="organ-bar-wrap"><div class="organ-bar" style="width:83%"></div></div>
+        <span class="organ-pct">83%</span>
+      </div>
+      <div class="organ-row">
+        <span class="organ-icon">💪</span>
+        <span class="organ-name">Muscles</span>
+        <div class="organ-bar-wrap"><div class="organ-bar" style="width:79%"></div></div>
+        <span class="organ-pct">79%</span>
+      </div>
+      <div class="organ-row">
+        <span class="organ-icon">🦴</span>
+        <span class="organ-name">Bones</span>
+        <div class="organ-bar-wrap"><div class="organ-bar" style="width:31%"></div></div>
+        <span class="organ-pct">31%</span>
+      </div>
+      <div class="organ-row">
+        <span class="organ-icon">🫀</span>
+        <span class="organ-name">Heart</span>
+        <div class="organ-bar-wrap"><div class="organ-bar" style="width:73%"></div></div>
+        <span class="organ-pct">73%</span>
+      </div>
+    </div>
+
+    <!-- TIPS STRIP -->
+    <div class="tips-strip">
+      <h3>💡 Smart hydration tips</h3>
+      <div class="tips-list">
+        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Start every morning with a full glass of water before your first coffee or tea — it kickstarts your metabolism.</div></div>
+        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Drink a glass before each meal — it can reduce unnecessary snacking and aid digestion.</div></div>
+        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Set a reminder every 90 minutes on your phone so hydration becomes automatic.</div></div>
+        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Hot weather, exercise, or illness? Add 500–1000 ml to your daily goal to compensate.</div></div>
+        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Keep a water bottle at your desk, in your bag, and by your bed — visibility equals action.</div></div>
+        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Herbal teas, coconut water, and water-rich fruits (watermelon, cucumber) count towards your intake too!</div></div>
+      </div>
+    </div>
+
+  </div><!-- /facts-section -->
+
+</div><!-- /container -->
+
+<script>
+  const bottles = [
+    { label: 'Glass',      ml: 200,  fill: '#378ADD' },
+    { label: 'Small',      ml: 330,  fill: '#5DCAA5' },
+    { label: 'Medium',     ml: 500,  fill: '#378ADD' },
+    { label: 'Sport',      ml: 600,  fill: '#5DCAA5' },
+    { label: 'Large',      ml: 750,  fill: '#378ADD' },
+    { label: '1 Litre',    ml: 1000, fill: '#5DCAA5' },
+    { label: '1.5 Litre',  ml: 1500, fill: '#378ADD' },
+    { label: '2 Litre',    ml: 2000, fill: '#5DCAA5' },
+  ];
+
+  let entries = [];
+  let goal = 2500;
+
+  function bottleSVG(fill, pct) {
+    const totalH = 36;
+    const filled = Math.round(totalH * Math.min(1, pct));
+    const yFill = 14 + totalH - filled;
+    const uid = fill.replace('#', '') + Math.random().toString(36).slice(2,6);
+    return `<svg width="40" height="58" viewBox="0 0 40 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="13" y="2" width="14" height="9" rx="3" fill="#B5D4F4"/>
+      <rect x="4" y="11" width="32" height="43" rx="9" fill="#E6F1FB" stroke="#B5D4F4" stroke-width="1"/>
+      <clipPath id="c${uid}"><rect x="4" y="${yFill}" width="32" height="${filled}" rx="7"/></clipPath>
+      <rect x="4" y="11" width="32" height="43" rx="9" fill="${fill}" opacity="0.75" clip-path="url(#c${uid})"/>
+      <rect x="8" y="15" width="6" height="22" rx="3" fill="rgba(255,255,255,0.25)"/>
+    </svg>`;
+  }
+
+  function totalMl() { return entries.reduce((s, e) => s + e.ml, 0); }
+
+  function render() {
+    const tot = totalMl();
+    const pct = Math.min(1, tot / goal);
+
+    document.getElementById('intakeDisplay').innerHTML = tot + ' <span>ml</span>';
+    document.getElementById('trackFill').style.width = (pct * 100) + '%';
+    document.getElementById('pctLabel').textContent = Math.round(pct * 100) + '% of goal';
+    document.getElementById('goalLabel').textContent = 'Goal: ' + goal + ' ml';
+    const rem = Math.max(0, goal - tot);
+    document.getElementById('remaining').textContent = rem > 0 ? rem + ' ml to go' : '🎯 Goal reached!';
+    document.getElementById('congrats').style.display = pct >= 1 ? 'block' : 'none';
+
+    // Render bottle grid
+    const grid = document.getElementById('bottlesGrid');
+    grid.innerHTML = '';
+    bottles.forEach(b => {
+      const btn = document.createElement('button');
+      btn.className = 'bottle-btn';
+      btn.innerHTML = `<div class="bottle-svg-wrap">${bottleSVG(b.fill, 0.45)}</div>
+        <div class="bottle-name">${b.label}</div>
+        <div class="bottle-ml-label">${b.ml} ml</div>`;
+      btn.onclick = () => addEntry(b.ml, b.label);
+      grid.appendChild(btn);
+    });
+
+    // Render log
+    const list = document.getElementById('logList');
+    if (entries.length === 0) {
+      list.innerHTML = '<div class="log-empty">No entries yet — start drinking! 💧</div>';
+      return;
+    }
+    list.innerHTML = '';
+    const logDiv = document.createElement('div');
+    logDiv.className = 'log-list';
+    [...entries].reverse().forEach((e, ri) => {
+      const i = entries.length - 1 - ri;
+      const item = document.createElement('div');
+      item.className = 'log-item';
+      item.innerHTML = `
+        <div class="log-item-left">
+          <div class="log-dot"></div>
+          <span class="log-item-ml">+${e.ml} ml</span>
+          <span class="log-item-meta">${e.label ? e.label + ' · ' : ''}${e.time}</span>
+        </div>
+        <button class="log-item-del" onclick="deleteEntry(${i})" title="Remove">✕</button>`;
+      logDiv.appendChild(item);
+    });
+    list.appendChild(logDiv);
+  }
+
+  function addEntry(ml, label) {
+    const now = new Date();
+    const t = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    entries.push({ ml, label: label || '', time: t });
+    render();
+  }
+
+  function addCustom() {
+    const v = parseInt(document.getElementById('customMl').value);
+    if (!v || v < 10 || v > 3000) return;
+    addEntry(v, 'Custom');
+    document.getElementById('customMl').value = '';
+  }
+
+  function deleteEntry(i) { entries.splice(i, 1); render(); }
+  function clearAll() { entries = []; render(); }
+
+  document.getElementById('goalInput').addEventListener('input', function () {
+    const v = parseInt(this.value);
+    if (v >= 500 && v <= 6000) { goal = v; render(); }
+  });
+
+  document.getElementById('customMl').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') addCustom();
+  });
+
+  render();
+</script>
+</body>
+</html>
