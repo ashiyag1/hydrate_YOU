@@ -1,563 +1,550 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Hydrate — Water Intake Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hydrate 💧 — Your Water Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-50:#E6F1FB;--blue-100:#B5D4F4;--blue-200:#85B7EB;--blue-400:#378ADD;--blue-600:#185FA5;--blue-800:#0C447C;--blue-900:#042C53;
+  --teal-50:#E1F5EE;--teal-100:#9FE1CB;--teal-200:#5DCAA5;--teal-400:#1D9E75;--teal-600:#0F6E56;
+  --bg:#EDF6FF;--card:#ffffff;--text:#042C53;--muted:#2d6ea8;--border:#C3DCEF;
+  --shadow:0 8px 32px rgba(4,44,83,0.08);--shadow-lg:0 16px 48px rgba(4,44,83,0.14);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
 
-  :root {
-    --b50: #E6F1FB; --b100: #B5D4F4; --b200: #85B7EB;
-    --b400: #378ADD; --b600: #185FA5; --b800: #0C447C; --b900: #042C53;
-    --t50: #E1F5EE; --t100: #9FE1CB; --t200: #5DCAA5; --t400: #1D9E75; --t600: #0F6E56;
-    --bg: #EEF6FD; --card: #ffffff;
-    --text: #042C53; --muted: #185FA5; --border: #B5D4F4;
-    --radius: 16px; --radius-sm: 10px;
-  }
+/* ── ANIMATED BG BLOBS ── */
+body::before,body::after{
+  content:'';position:fixed;border-radius:50%;filter:blur(80px);opacity:0.35;pointer-events:none;z-index:0;
+}
+body::before{width:600px;height:600px;background:radial-gradient(circle,#B5D4F4,transparent);top:-200px;left:-200px;animation:blob1 18s ease-in-out infinite alternate;}
+body::after{width:500px;height:500px;background:radial-gradient(circle,#9FE1CB,transparent);bottom:-150px;right:-150px;animation:blob2 14s ease-in-out infinite alternate;}
+@keyframes blob1{to{transform:translate(120px,80px) scale(1.15)}}
+@keyframes blob2{to{transform:translate(-80px,-60px) scale(1.2)}}
 
-  html { scroll-behavior: smooth; }
+.page{position:relative;z-index:1}
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 20% -10%, #cde8fb55, transparent),
-      radial-gradient(ellipse 60% 40% at 80% 110%, #9FE1CB33, transparent);
-  }
+/* ── HERO ── */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:2rem 1.5rem 3rem;position:relative;overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:linear-gradient(160deg,#042C53 0%,#185FA5 45%,#1D9E75 100%);
+  z-index:0;
+}
+.hero-bg::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:120px;
+  background:linear-gradient(to bottom,transparent,var(--bg));
+}
+.hero-content{position:relative;z-index:1;max-width:600px}
+.drop-anim{font-size:72px;display:block;animation:dropBounce 2.4s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(55,138,221,0.5))}
+@keyframes dropBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-18px) scale(1.05)}}
+.hero-title{
+  font-family:'Lora',serif;font-size:clamp(44px,8vw,80px);color:#fff;
+  font-weight:600;letter-spacing:-2px;line-height:1;margin:16px 0 12px;
+}
+.hero-title span{font-style:italic;color:#9FE1CB}
+.hero-sub{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,0.75);font-weight:400;line-height:1.6;margin-bottom:2rem}
+.hero-cta{
+  display:inline-block;padding:14px 36px;background:#fff;color:var(--blue-800);
+  border-radius:99px;font-weight:800;font-size:15px;text-decoration:none;
+  box-shadow:0 4px 24px rgba(0,0,0,0.2);transition:transform 0.2s,box-shadow 0.2s;cursor:pointer;border:none;font-family:'Nunito',sans-serif;
+}
+.hero-cta:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,0.25)}
+.scroll-hint{color:rgba(255,255,255,0.5);font-size:12px;margin-top:2.5rem;letter-spacing:0.1em;text-transform:uppercase;animation:fadeUpDown 2s ease-in-out infinite}
+@keyframes fadeUpDown{0%,100%{opacity:0.4;transform:translateY(0)}50%{opacity:1;transform:translateY(6px)}}
 
-  /* ── HEADER ── */
-  header {
-    text-align: center;
-    padding: 3.5rem 1rem 2rem;
-    position: relative;
-  }
-  .header-wave {
-    position: absolute; bottom: -1px; left: 0; width: 100%; overflow: hidden; line-height: 0;
-  }
-  .header-wave svg { display: block; width: 100%; }
-  .site-title {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(38px, 7vw, 60px);
-    font-weight: 400;
-    color: var(--b900);
-    letter-spacing: -1px;
-    line-height: 1.1;
-  }
-  .site-title em { font-style: italic; color: var(--b600); }
-  .site-sub {
-    font-size: 15px; color: var(--muted); margin-top: 8px;
-    font-weight: 300; letter-spacing: 0.02em;
-  }
-  .drop-icon {
-    font-size: 40px; display: block; margin-bottom: 10px;
-    animation: bob 3s ease-in-out infinite;
-  }
-  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+/* ── SECTION WRAPPER ── */
+.section{max-width:820px;margin:0 auto;padding:3rem 1.5rem}
+.section-eyebrow{font-size:11px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:var(--blue-400);margin-bottom:8px}
+.section-title{font-family:'Lora',serif;font-size:clamp(28px,5vw,42px);font-weight:600;color:var(--blue-900);letter-spacing:-0.5px;line-height:1.2;margin-bottom:6px}
+.section-title em{font-style:italic;color:var(--teal-400)}
+.section-sub{font-size:15px;color:var(--muted);font-weight:400;line-height:1.65;margin-bottom:2rem;max-width:520px}
 
-  /* ── LAYOUT ── */
-  .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:1.75rem;box-shadow:var(--shadow);margin-bottom:1.25rem}
 
-  /* ── CARDS ── */
-  .card {
-    background: var(--card);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    margin-bottom: 1.25rem;
-    box-shadow: 0 4px 24px #185FA508;
-  }
+/* ── GOAL SETTING ── */
+.goal-bar{
+  display:flex;align-items:center;gap:14px;background:var(--blue-50);
+  border:1px solid var(--blue-100);border-radius:16px;padding:14px 18px;margin-bottom:1.25rem;flex-wrap:wrap;
+}
+.goal-bar label{font-size:13px;font-weight:700;color:var(--blue-600);white-space:nowrap}
+.goal-bar input{
+  width:110px;padding:8px 12px;border:1.5px solid var(--blue-100);border-radius:10px;
+  font-size:14px;font-family:'Nunito',sans-serif;font-weight:600;color:var(--text);background:#fff;outline:none;transition:border-color 0.15s;
+}
+.goal-bar input:focus{border-color:var(--blue-400)}
+.goal-hint{font-size:12px;color:var(--blue-200);font-style:italic}
 
-  /* ── GOAL SETTING ── */
-  .goal-row {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 1.25rem;
-  }
-  .goal-row label { font-size: 13px; color: var(--muted); white-space: nowrap; font-weight: 500; }
-  .goal-row input {
-    width: 110px; padding: 8px 12px;
-    border: 0.5px solid var(--border); border-radius: var(--radius-sm);
-    font-size: 14px; font-family: 'DM Sans', sans-serif;
-    color: var(--text); background: var(--b50); outline: none;
-    transition: border-color 0.15s;
-  }
-  .goal-row input:focus { border-color: var(--b400); }
-  .goal-row .hint { font-size: 12px; color: var(--b200); font-style: italic; }
+/* ── PROGRESS ── */
+.progress-nums{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
+.intake-num{font-family:'Lora',serif;font-size:52px;font-weight:600;color:var(--blue-600);line-height:1}
+.intake-unit{font-size:16px;font-weight:400;color:var(--muted);margin-left:4px}
+.goal-rem{font-size:13px;color:var(--muted);font-weight:500;text-align:right}
+.goal-rem strong{display:block;font-size:18px;color:var(--blue-800);font-weight:700}
+.progress-track{height:22px;border-radius:99px;background:var(--blue-50);border:1px solid var(--blue-100);overflow:hidden;position:relative}
+.progress-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#378ADD 0%,#5DCAA5 100%);
+  transition:width 0.7s cubic-bezier(.34,1.56,.64,1);
+  position:relative;min-width:0;
+}
+.progress-fill::after{content:'';position:absolute;top:4px;left:10px;right:10px;height:5px;border-radius:99px;background:rgba(255,255,255,0.4)}
+.progress-fill::before{
+  content:'';position:absolute;right:0;top:0;bottom:0;width:30px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3));border-radius:99px;
+  animation:shimmer 2s ease-in-out infinite;
+}
+@keyframes shimmer{0%,100%{opacity:0}50%{opacity:1}}
+.progress-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px;font-weight:600}
 
-  /* ── PROGRESS ── */
-  .progress-header {
-    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;
-  }
-  .big-num { font-size: 34px; font-weight: 600; color: var(--b600); line-height: 1; }
-  .big-num span { font-size: 14px; font-weight: 400; color: var(--muted); margin-left: 2px; }
-  .remaining { font-size: 13px; color: var(--muted); }
-  .track-bar {
-    height: 18px; border-radius: 99px;
-    background: var(--b50); border: 0.5px solid var(--border); overflow: hidden;
-  }
-  .track-fill {
-    height: 100%; border-radius: 99px;
-    background: linear-gradient(90deg, var(--b400), #5DCAA5);
-    transition: width 0.6s cubic-bezier(.4,0,.2,1);
-    position: relative;
-  }
-  .track-fill::after {
-    content: ''; position: absolute; top: 3px; left: 8px; right: 8px; height: 4px;
-    border-radius: 99px; background: rgba(255,255,255,0.4);
-  }
-  .pct-row {
-    display: flex; justify-content: space-between;
-    font-size: 12px; color: var(--muted); margin-top: 6px;
-  }
+/* ── CELEBRATION ── */
+.celebration{
+  display:none;background:linear-gradient(135deg,var(--teal-50),#d0f5e9);
+  border:1.5px solid var(--teal-100);border-radius:18px;padding:18px 22px;
+  margin-bottom:1.25rem;text-align:center;animation:popIn 0.5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+.celebration p{font-size:15px;font-weight:700;color:var(--teal-600)}
+.celebration span{font-size:32px;display:block;margin-bottom:6px}
 
-  /* ── CONGRATS ── */
-  .congrats {
-    background: var(--t50); border: 0.5px solid var(--t200); border-radius: 12px;
-    padding: 14px 18px; font-size: 14px; color: var(--t600);
-    margin-bottom: 1.25rem; display: none; text-align: center; font-weight: 500;
-    animation: fadeIn 0.4s ease;
-  }
+/* ── BOTTLES ── */
+.bottles-title{font-size:13px;font-weight:800;color:var(--blue-600);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px}
+.bottles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:1.25rem}
+.bottle-btn{
+  background:#fff;border:1.5px solid var(--border);border-radius:18px;
+  padding:16px 8px 13px;cursor:pointer;
+  transition:transform 0.18s cubic-bezier(.34,1.56,.64,1),border-color 0.15s,box-shadow 0.15s;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  position:relative;overflow:hidden;
+}
+.bottle-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--blue-50),transparent);opacity:0;transition:opacity 0.2s}
+.bottle-btn:hover{border-color:var(--blue-400);transform:translateY(-5px) scale(1.03);box-shadow:0 10px 28px rgba(55,138,221,0.18)}
+.bottle-btn:hover::before{opacity:1}
+.bottle-btn:active{transform:scale(0.95)}
+.bottle-btn svg{position:relative;z-index:1}
+.bottle-name{font-size:11px;font-weight:800;color:var(--blue-800);position:relative;z-index:1}
+.bottle-ml{font-size:10px;color:var(--muted);font-weight:600;position:relative;z-index:1}
+.bottle-btn.clicked{animation:bottlePop 0.35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bottlePop{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
 
-  /* ── SECTION LABEL ── */
-  .section-label {
-    font-size: 11px; font-weight: 600; color: var(--b200);
-    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;
-  }
+/* ── CUSTOM ADD ── */
+.custom-row{display:flex;gap:10px}
+.custom-row input{
+  flex:1;padding:13px 16px;border:1.5px solid var(--border);border-radius:14px;
+  font-size:15px;font-family:'Nunito',sans-serif;font-weight:600;
+  color:var(--text);background:#fff;outline:none;transition:border-color 0.15s,box-shadow 0.15s;
+}
+.custom-row input:focus{border-color:var(--blue-400);box-shadow:0 0 0 4px rgba(55,138,221,0.1)}
+.add-btn{
+  padding:13px 24px;background:linear-gradient(135deg,var(--blue-600),var(--teal-400));
+  color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;
+  cursor:pointer;font-family:'Nunito',sans-serif;transition:transform 0.15s,box-shadow 0.15s;
+  white-space:nowrap;box-shadow:0 4px 16px rgba(55,138,221,0.3);
+}
+.add-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(55,138,221,0.4)}
+.add-btn:active{transform:scale(0.97)}
 
-  /* ── BOTTLES ── */
-  .bottles-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
-    margin-bottom: 1.25rem;
-  }
-  .bottle-btn {
-    background: var(--card); border: 0.5px solid var(--border); border-radius: 14px;
-    padding: 16px 10px 12px; cursor: pointer;
-    transition: transform 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-  }
-  .bottle-btn:hover {
-    border-color: var(--b400); background: var(--b50);
-    transform: translateY(-3px); box-shadow: 0 6px 18px #378ADD1A;
-  }
-  .bottle-btn:active { transform: scale(0.96); }
-  .bottle-svg-wrap { width: 40px; height: 56px; }
-  .bottle-name { font-size: 12px; font-weight: 500; color: var(--b800); }
-  .bottle-ml-label { font-size: 11px; color: var(--muted); }
+/* ── LOG ── */
+.log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.log-title-text{font-size:16px;font-weight:800;color:var(--blue-800)}
+.log-stats{font-size:12px;color:var(--muted);font-weight:600}
+.clear-btn{font-size:12px;color:var(--muted);cursor:pointer;background:none;border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-family:'Nunito',sans-serif;font-weight:600;transition:all 0.15s}
+.clear-btn:hover{background:var(--blue-50);color:var(--blue-600);border-color:var(--blue-100)}
+.log-empty{font-size:14px;color:var(--muted);text-align:center;padding:24px 0;font-weight:500}
+.log-list{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;padding-right:4px}
+.log-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;background:linear-gradient(135deg,var(--blue-50),#f0faf6);
+  border-radius:12px;border:1px solid var(--blue-100);animation:slideIn 0.25s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.log-left{display:flex;align-items:center;gap:10px}
+.log-badge{
+  background:linear-gradient(135deg,var(--blue-400),var(--teal-200));color:#fff;
+  font-size:11px;font-weight:800;border-radius:8px;padding:3px 8px;
+}
+.log-label{font-size:13px;color:var(--muted);font-weight:600}
+.log-time{font-size:11px;color:var(--blue-200);font-weight:600}
+.log-del{background:none;border:none;cursor:pointer;font-size:14px;color:var(--blue-100);padding:3px 5px;border-radius:6px;transition:all 0.15s;font-weight:700}
+.log-del:hover{color:#E24B4A;background:#fef2f2}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
 
-  /* ── CUSTOM ADD ── */
-  .custom-add { display: flex; gap: 10px; }
-  .custom-add input {
-    flex: 1; padding: 11px 14px;
-    border: 0.5px solid var(--border); border-radius: var(--radius-sm);
-    font-size: 14px; font-family: 'DM Sans', sans-serif;
-    color: var(--text); background: var(--card); outline: none;
-    transition: border-color 0.15s;
-  }
-  .custom-add input:focus { border-color: var(--b400); }
-  .add-btn {
-    padding: 11px 22px; background: var(--b600); color: #fff;
-    border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.15s;
-    white-space: nowrap;
-  }
-  .add-btn:hover { background: var(--b800); }
+/* ── CAROUSEL ── */
+.carousel-section{background:linear-gradient(160deg,var(--blue-900) 0%,#0e4f8a 50%,#0d6e55 100%);padding:4rem 0;position:relative;overflow:hidden}
+.carousel-section::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.carousel-inner{max-width:820px;margin:0 auto;padding:0 1.5rem;position:relative;z-index:1}
+.carousel-eyebrow{font-size:11px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:rgba(157,225,203,0.8);margin-bottom:8px}
+.carousel-heading{font-family:'Lora',serif;font-size:clamp(28px,5vw,42px);color:#fff;font-weight:600;margin-bottom:2rem;letter-spacing:-0.5px}
+.carousel-heading em{font-style:italic;color:#9FE1CB}
+.carousel-track{position:relative;height:420px;overflow:hidden;border-radius:24px}
+.carousel-slide{
+  position:absolute;inset:0;border-radius:24px;overflow:hidden;
+  opacity:0;transition:opacity 0.8s ease,transform 0.8s ease;transform:scale(1.02);
+}
+.carousel-slide.active{opacity:1;transform:scale(1)}
+.carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.slide-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(4,44,83,0.92) 0%,rgba(4,44,83,0.4) 50%,transparent 100%);
+}
+.slide-content{position:absolute;bottom:0;left:0;right:0;padding:2rem}
+.slide-emoji{font-size:40px;display:block;margin-bottom:10px}
+.slide-stat{font-family:'Lora',serif;font-size:42px;font-weight:600;color:#fff;letter-spacing:-1px;line-height:1}
+.slide-label{font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal-100);margin:6px 0 10px}
+.slide-text{font-size:14px;color:rgba(255,255,255,0.85);line-height:1.65;max-width:480px;font-weight:500}
+.carousel-dots{display:flex;justify-content:center;gap:8px;margin-top:1.5rem}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);border:none;cursor:pointer;transition:all 0.3s;padding:0}
+.dot.active{width:28px;border-radius:99px;background:#fff}
+.carousel-arrows{position:absolute;bottom:1.5rem;right:0;display:flex;gap:8px}
+.arrow-btn{
+  width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.3);
+  background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;transition:all 0.2s;backdrop-filter:blur(4px);
+}
+.arrow-btn:hover{background:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.6)}
 
-  /* ── LOG ── */
-  .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .log-title { font-size: 15px; font-weight: 500; color: var(--b800); }
-  .clear-btn {
-    font-size: 12px; color: var(--muted); cursor: pointer; background: none;
-    border: none; font-family: 'DM Sans', sans-serif; padding: 4px 8px;
-    border-radius: 6px; transition: background 0.1s;
-  }
-  .clear-btn:hover { background: var(--b50); color: var(--b600); }
-  .log-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px 0; }
-  .log-list { display: flex; flex-direction: column; gap: 7px; max-height: 260px; overflow-y: auto; }
-  .log-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 9px 12px; background: var(--b50); border-radius: 9px;
-    animation: fadeIn 0.25s ease;
-  }
-  .log-item-left { display: flex; align-items: center; gap: 8px; }
-  .log-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--b400); flex-shrink: 0; }
-  .log-item-ml { font-size: 14px; font-weight: 500; color: var(--b800); }
-  .log-item-meta { font-size: 11px; color: var(--muted); }
-  .log-item-del {
-    background: none; border: none; cursor: pointer; font-size: 13px;
-    color: var(--b200); padding: 2px 4px; line-height: 1; border-radius: 4px;
-    transition: color 0.1s;
-  }
-  .log-item-del:hover { color: #E24B4A; }
+/* ── BODY WATER ── */
+.body-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){.body-grid{grid-template-columns:1fr}}
+.organ-card{background:var(--blue-50);border:1px solid var(--blue-100);border-radius:16px;padding:14px 16px}
+.organ-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.organ-emoji{font-size:24px}
+.organ-info .organ-name{font-size:13px;font-weight:800;color:var(--blue-800)}
+.organ-info .organ-pct{font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--blue-600);line-height:1}
+.organ-bar-wrap{height:8px;background:rgba(55,138,221,0.15);border-radius:99px;overflow:hidden}
+.organ-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue-400),var(--teal-200));transition:width 1s ease}
 
-  @keyframes fadeIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:none} }
+/* ── TIPS ── */
+.tips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.tip-card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:1.25rem;transition:transform 0.2s,box-shadow 0.2s;position:relative;overflow:hidden}
+.tip-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue-400),var(--teal-200))}
+.tip-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.tip-icon{font-size:28px;margin-bottom:10px;display:block}
+.tip-title{font-size:13px;font-weight:800;color:var(--blue-800);margin-bottom:6px}
+.tip-text{font-size:13px;color:var(--muted);line-height:1.6;font-weight:500}
 
-  /* ── FACTS SECTION ── */
-  .facts-section { margin-top: 2.5rem; }
-  .facts-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 26px; font-weight: 400; color: var(--b900);
-    margin-bottom: 6px; letter-spacing: -0.3px;
-  }
-  .facts-intro { font-size: 14px; color: var(--muted); margin-bottom: 1.5rem; font-weight: 300; }
+/* ── FOOTER ── */
+footer{background:var(--blue-900);color:rgba(255,255,255,0.5);text-align:center;padding:2rem 1rem;font-size:13px}
+footer strong{color:#9FE1CB}
 
-  .facts-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px;
-  }
-  .fact-card {
-    background: var(--card); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 1.25rem;
-    transition: transform 0.2s, box-shadow 0.2s;
-    position: relative; overflow: hidden;
-  }
-  .fact-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, var(--b400), var(--t200));
-  }
-  .fact-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px #378ADD14; }
-  .fact-illus {
-    font-size: 44px; display: block; margin-bottom: 10px;
-    line-height: 1; text-align: center;
-  }
-  .fact-stat {
-    font-family: 'Playfair Display', serif;
-    font-size: 28px; font-weight: 500; color: var(--b600);
-    margin-bottom: 4px; text-align: center;
-  }
-  .fact-label {
-    font-size: 12px; font-weight: 600; color: var(--b200);
-    letter-spacing: 0.06em; text-transform: uppercase;
-    text-align: center; margin-bottom: 10px;
-  }
-  .fact-text { font-size: 13px; color: var(--muted); line-height: 1.6; text-align: center; }
+/* ── FLOATING DROPS ── */
+.float-drops{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;overflow:hidden}
+.fdrop{position:absolute;font-size:20px;opacity:0;animation:floatUp linear infinite}
+@keyframes floatUp{0%{opacity:0;transform:translateY(100vh) rotate(0deg)}10%{opacity:0.4}90%{opacity:0.2}100%{opacity:0;transform:translateY(-100px) rotate(360deg)}}
 
-  /* ── BODY WATER VISUAL ── */
-  .body-card {
-    background: var(--card); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 1.5rem; margin-top: 14px;
-  }
-  .body-card-title {
-    font-size: 14px; font-weight: 500; color: var(--b800); margin-bottom: 14px;
-  }
-  .organ-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .organ-icon { font-size: 22px; width: 32px; text-align: center; flex-shrink: 0; }
-  .organ-name { font-size: 13px; color: var(--muted); width: 90px; flex-shrink: 0; }
-  .organ-bar-wrap { flex: 1; height: 10px; background: var(--b50); border-radius: 99px; overflow: hidden; }
-  .organ-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--b400), #5DCAA5); }
-  .organ-pct { font-size: 12px; font-weight: 600; color: var(--b600); width: 36px; text-align: right; flex-shrink: 0; }
+/* ── RIPPLE ── */
+.ripple-wrap{position:relative;overflow:hidden}
+.ripple{position:absolute;border-radius:50%;background:rgba(55,138,221,0.25);transform:scale(0);animation:rippleOut 0.6s ease-out forwards;pointer-events:none}
+@keyframes rippleOut{to{transform:scale(4);opacity:0}}
 
-  /* ── TIPS STRIP ── */
-  .tips-strip {
-    background: linear-gradient(135deg, var(--b600) 0%, var(--t400) 100%);
-    border-radius: var(--radius); padding: 1.5rem; margin-top: 14px; color: #fff;
-  }
-  .tips-strip h3 { font-size: 16px; font-weight: 500; margin-bottom: 12px; opacity: 0.95; }
-  .tips-list { display: flex; flex-direction: column; gap: 9px; }
-  .tip-item { display: flex; gap: 10px; align-items: flex-start; }
-  .tip-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.7); flex-shrink: 0; margin-top: 6px; }
-  .tip-text { font-size: 13px; opacity: 0.9; line-height: 1.5; }
-
-  /* ── SCROLL BAR ── */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .bottles-grid{grid-template-columns:repeat(4,1fr)}
+  .carousel-track{height:360px}
+  .slide-stat{font-size:32px}
+  .body-grid{grid-template-columns:1fr 1fr}
+}
 </style>
 </head>
 <body>
+<div class="float-drops" id="floatDrops"></div>
+<div class="page">
 
-<header>
-  <span class="drop-icon">💧</span>
-  <h1 class="site-title"><em>Hydrate</em> — Water Tracker</h1>
-  <p class="site-sub">Drink well. Feel great. One sip at a time.</p>
-  <div class="header-wave">
-    <svg viewBox="0 0 1440 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z" fill="#EEF6FD"/>
-    </svg>
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <span class="drop-anim">💧</span>
+    <h1 class="hero-title">Hydrate<br/><span>beautifully.</span></h1>
+    <p class="hero-sub">Track your water intake, discover why hydration transforms your body, and make drinking water the best part of your day.</p>
+    <button class="hero-cta" onclick="document.getElementById('tracker').scrollIntoView({behavior:'smooth'})">Start Tracking →</button>
+    <div class="scroll-hint">↓ scroll to track</div>
   </div>
-</header>
+</section>
 
-<div class="container">
+<!-- ── TRACKER ── -->
+<section class="section" id="tracker">
+  <div class="section-eyebrow">Your daily tracker</div>
+  <h2 class="section-title">How much have<br/>you drunk <em>today?</em></h2>
 
-  <!-- GOAL SETTING -->
-  <div class="goal-row">
-    <label for="goalInput">Daily goal</label>
-    <input type="number" id="goalInput" value="2500" min="500" max="6000" step="50" />
-    <span style="font-size:13px;color:var(--muted)">ml</span>
-    <span class="hint">Recommended: 2000–3000 ml/day</span>
+  <!-- goal -->
+  <div class="goal-bar">
+    <label for="goalInput">🎯 Daily Goal</label>
+    <input type="number" id="goalInput" value="2500" min="500" max="6000" step="50"/>
+    <span style="font-size:13px;color:var(--muted);font-weight:600">ml</span>
+    <span class="goal-hint">Recommended: 2000–3000 ml/day for adults</span>
   </div>
 
-  <!-- PROGRESS -->
+  <!-- progress card -->
   <div class="card">
-    <div class="progress-header">
-      <div class="big-num" id="intakeDisplay">0 <span>ml</span></div>
-      <div class="remaining" id="remaining">2500 ml to go</div>
+    <div class="progress-nums">
+      <div>
+        <div class="intake-num" id="intakeDisplay">0<span class="intake-unit">ml</span></div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">consumed today</div>
+      </div>
+      <div class="goal-rem">
+        <strong id="remaining">2500 ml</strong>
+        remaining
+      </div>
     </div>
-    <div class="track-bar">
-      <div class="track-fill" id="trackFill" style="width:0%"></div>
+    <div class="progress-track">
+      <div class="progress-fill" id="trackFill" style="width:0%"></div>
     </div>
-    <div class="pct-row">
-      <span id="pctLabel">0% of goal</span>
-      <span id="goalLabel">Goal: 2500 ml</span>
+    <div class="progress-labels">
+      <span id="pctLabel">0%</span>
+      <span id="goalLbl">Goal: 2500 ml</span>
     </div>
   </div>
 
-  <div class="congrats" id="congrats">🎉 You hit your goal today! Your body thanks you.</div>
+  <!-- celebration -->
+  <div class="celebration" id="celebration">
+    <span>🎊</span>
+    <p>You crushed your water goal today! Your brain, skin, and muscles are all cheering for you.</p>
+  </div>
 
-  <!-- BOTTLE QUICK ADD -->
-  <div class="section-label">Quick add — tap a bottle</div>
+  <!-- bottles -->
+  <div class="bottles-title">⚡ Quick Add — Tap Your Bottle</div>
   <div class="bottles-grid" id="bottlesGrid"></div>
 
-  <!-- CUSTOM ADD -->
+  <!-- custom -->
   <div class="card">
-    <div class="section-label" style="margin-bottom:10px">Custom amount</div>
-    <div class="custom-add">
-      <input type="number" id="customMl" placeholder="Enter ml (e.g. 450)" min="10" max="3000" />
-      <button class="add-btn" onclick="addCustom()">+ Add</button>
+    <div class="bottles-title" style="margin-bottom:12px">✏️ Custom Amount</div>
+    <div class="custom-row">
+      <input type="number" id="customMl" placeholder="Enter amount in ml (e.g. 450)" min="10" max="3000"/>
+      <button class="add-btn ripple-wrap" onclick="addCustom(event)">+ Add</button>
     </div>
   </div>
 
-  <!-- LOG -->
+  <!-- log -->
   <div class="card">
     <div class="log-header">
-      <span class="log-title">Today's log</span>
+      <div>
+        <div class="log-title-text">📋 Today's Log</div>
+        <div class="log-stats" id="logStats">0 entries</div>
+      </div>
       <button class="clear-btn" onclick="clearAll()">Clear all</button>
     </div>
-    <div id="logList"><div class="log-empty">No entries yet — start drinking! 💧</div></div>
+    <div id="logList"><div class="log-empty">No entries yet — tap a bottle or add a custom amount! 💧</div></div>
   </div>
+</section>
 
-  <!-- ─── FACTS SECTION ─── -->
-  <div class="facts-section">
-    <h2 class="facts-title">Why water matters</h2>
-    <p class="facts-intro">Your body is mostly water — here's why every sip counts.</p>
-
-    <div class="facts-grid">
-
-      <div class="fact-card">
-        <span class="fact-illus">🧠</span>
-        <div class="fact-stat">75%</div>
-        <div class="fact-label">Brain is water</div>
-        <div class="fact-text">Your brain is three-quarters water. Even mild dehydration of 1–2% can impair concentration, memory, and mood.</div>
-      </div>
-
-      <div class="fact-card">
-        <span class="fact-illus">🩸</span>
-        <div class="fact-stat">90%</div>
-        <div class="fact-label">Blood is water</div>
-        <div class="fact-text">Blood is about 90% water, carrying oxygen and nutrients to every cell in your body. Stay hydrated, stay energised.</div>
-      </div>
-
-      <div class="fact-card">
-        <span class="fact-illus">⚡</span>
-        <div class="fact-stat">+30%</div>
-        <div class="fact-label">Metabolism boost</div>
-        <div class="fact-text">Drinking 500 ml of water can boost your metabolic rate by up to 30% for about 40 minutes, helping calorie burn.</div>
-      </div>
-
-      <div class="fact-card">
-        <span class="fact-illus">🦷</span>
-        <div class="fact-stat">2L</div>
-        <div class="fact-label">Daily kidneys filter</div>
-        <div class="fact-text">Your kidneys filter around 200 litres of blood daily and need adequate water to flush out toxins and waste.</div>
-      </div>
-
-      <div class="fact-card">
-        <span class="fact-illus">🏃</span>
-        <div class="fact-stat">-2%</div>
-        <div class="fact-label">Performance drop</div>
-        <div class="fact-text">Losing just 2% of body weight in sweat can cause a noticeable drop in physical and cognitive performance.</div>
-      </div>
-
-      <div class="fact-card">
-        <span class="fact-illus">✨</span>
-        <div class="fact-stat">skin</div>
-        <div class="fact-label">Glow up</div>
-        <div class="fact-text">Drinking enough water keeps skin elastic and radiant. Dehydration makes skin look dull, dry, and more prone to wrinkles.</div>
-      </div>
-
-      <div class="fact-card">
-        <span class="fact-illus">🌡️</span>
-        <div class="fact-stat">37°C</div>
-        <div class="fact-label">Body temp control</div>
-        <div class="fact-text">Water regulates your core body temperature through perspiration. Without it, overheating becomes a real risk.</div>
-      </div>
-
-      <div class="fact-card">
-        <span class="fact-illus">💪</span>
-        <div class="fact-stat">80%</div>
-        <div class="fact-label">Muscles are water</div>
-        <div class="fact-text">Muscles are about 80% water. Hydration prevents cramps, keeps joints lubricated, and speeds up muscle recovery.</div>
-      </div>
-
-    </div>
-
-    <!-- BODY WATER BREAKDOWN -->
-    <div class="body-card">
-      <div class="body-card-title">💧 Water content in your body</div>
-
-      <div class="organ-row">
-        <span class="organ-icon">🧠</span>
-        <span class="organ-name">Brain</span>
-        <div class="organ-bar-wrap"><div class="organ-bar" style="width:75%"></div></div>
-        <span class="organ-pct">75%</span>
-      </div>
-      <div class="organ-row">
-        <span class="organ-icon">🩸</span>
-        <span class="organ-name">Blood</span>
-        <div class="organ-bar-wrap"><div class="organ-bar" style="width:90%"></div></div>
-        <span class="organ-pct">90%</span>
-      </div>
-      <div class="organ-row">
-        <span class="organ-icon">🫁</span>
-        <span class="organ-name">Lungs</span>
-        <div class="organ-bar-wrap"><div class="organ-bar" style="width:83%"></div></div>
-        <span class="organ-pct">83%</span>
-      </div>
-      <div class="organ-row">
-        <span class="organ-icon">💪</span>
-        <span class="organ-name">Muscles</span>
-        <div class="organ-bar-wrap"><div class="organ-bar" style="width:79%"></div></div>
-        <span class="organ-pct">79%</span>
-      </div>
-      <div class="organ-row">
-        <span class="organ-icon">🦴</span>
-        <span class="organ-name">Bones</span>
-        <div class="organ-bar-wrap"><div class="organ-bar" style="width:31%"></div></div>
-        <span class="organ-pct">31%</span>
-      </div>
-      <div class="organ-row">
-        <span class="organ-icon">🫀</span>
-        <span class="organ-name">Heart</span>
-        <div class="organ-bar-wrap"><div class="organ-bar" style="width:73%"></div></div>
-        <span class="organ-pct">73%</span>
+<!-- ── CAROUSEL ── -->
+<section class="carousel-section" id="factsSection">
+  <div class="carousel-inner">
+    <div class="carousel-eyebrow">Did you know?</div>
+    <h2 class="carousel-heading">Water is <em>life-changing.</em></h2>
+    <div style="position:relative">
+      <div class="carousel-track" id="carouselTrack"></div>
+      <div class="carousel-arrows">
+        <button class="arrow-btn" onclick="moveCarousel(-1)">←</button>
+        <button class="arrow-btn" onclick="moveCarousel(1)">→</button>
       </div>
     </div>
+    <div class="carousel-dots" id="carouselDots"></div>
+  </div>
+</section>
 
-    <!-- TIPS STRIP -->
-    <div class="tips-strip">
-      <h3>💡 Smart hydration tips</h3>
-      <div class="tips-list">
-        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Start every morning with a full glass of water before your first coffee or tea — it kickstarts your metabolism.</div></div>
-        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Drink a glass before each meal — it can reduce unnecessary snacking and aid digestion.</div></div>
-        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Set a reminder every 90 minutes on your phone so hydration becomes automatic.</div></div>
-        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Hot weather, exercise, or illness? Add 500–1000 ml to your daily goal to compensate.</div></div>
-        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Keep a water bottle at your desk, in your bag, and by your bed — visibility equals action.</div></div>
-        <div class="tip-item"><div class="tip-dot"></div><div class="tip-text">Herbal teas, coconut water, and water-rich fruits (watermelon, cucumber) count towards your intake too!</div></div>
-      </div>
-    </div>
+<!-- ── BODY WATER ── -->
+<section class="section">
+  <div class="section-eyebrow">Inside your body</div>
+  <h2 class="section-title">You are mostly <em>water.</em></h2>
+  <p class="section-sub">Every organ depends on it. Here's how much water lives inside you right now.</p>
+  <div class="body-grid">
+    <div class="organ-card"><div class="organ-top"><span class="organ-emoji">🧠</span><div class="organ-info"><div class="organ-name">Brain & Heart</div><div class="organ-pct">73%</div></div></div><div class="organ-bar-wrap"><div class="organ-bar-fill" style="width:73%"></div></div></div>
+    <div class="organ-card"><div class="organ-top"><span class="organ-emoji">🩸</span><div class="organ-info"><div class="organ-name">Blood</div><div class="organ-pct">90%</div></div></div><div class="organ-bar-wrap"><div class="organ-bar-fill" style="width:90%"></div></div></div>
+    <div class="organ-card"><div class="organ-top"><span class="organ-emoji">🫁</span><div class="organ-info"><div class="organ-name">Lungs</div><div class="organ-pct">83%</div></div></div><div class="organ-bar-wrap"><div class="organ-bar-fill" style="width:83%"></div></div></div>
+    <div class="organ-card"><div class="organ-top"><span class="organ-emoji">💪</span><div class="organ-info"><div class="organ-name">Muscles</div><div class="organ-pct">79%</div></div></div><div class="organ-bar-wrap"><div class="organ-bar-fill" style="width:79%"></div></div></div>
+    <div class="organ-card"><div class="organ-top"><span class="organ-emoji">🦴</span><div class="organ-info"><div class="organ-name">Bones</div><div class="organ-pct">31%</div></div></div><div class="organ-bar-wrap"><div class="organ-bar-fill" style="width:31%"></div></div></div>
+    <div class="organ-card"><div class="organ-top"><span class="organ-emoji">🧴</span><div class="organ-info"><div class="organ-name">Skin</div><div class="organ-pct">64%</div></div></div><div class="organ-bar-wrap"><div class="organ-bar-fill" style="width:64%"></div></div></div>
+  </div>
+</section>
 
-  </div><!-- /facts-section -->
+<!-- ── TIPS ── -->
+<section style="background:var(--blue-50);padding:0">
+<div class="section">
+  <div class="section-eyebrow">Hydration hacks</div>
+  <h2 class="section-title">Drink smarter, <em>not harder.</em></h2>
+  <p class="section-sub">Simple habits that make hitting your goal effortless every single day.</p>
+  <div class="tips-grid">
+    <div class="tip-card"><span class="tip-icon">🌅</span><div class="tip-title">Morning glass ritual</div><div class="tip-text">Down a full glass before coffee each morning. It kickstarts metabolism and rehydrates after 8 hours of sleep.</div></div>
+    <div class="tip-card"><span class="tip-icon">🍽️</span><div class="tip-title">Pre-meal hydration</div><div class="tip-text">Drink a glass before every meal. It aids digestion, reduces overeating, and adds 600 ml to your daily total effortlessly.</div></div>
+    <div class="tip-card"><span class="tip-icon">⏰</span><div class="tip-title">90-minute reminders</div><div class="tip-text">Set a recurring alarm every 90 minutes. Small, frequent sips are more effective than guzzling large amounts at once.</div></div>
+    <div class="tip-card"><span class="tip-icon">🌡️</span><div class="tip-title">Weather-adjusted goal</div><div class="tip-text">Hot day or workout? Add 500–1000 ml to your goal. Your body loses significantly more water through sweat.</div></div>
+    <div class="tip-card"><span class="tip-icon">👁️</span><div class="tip-title">Keep it visible</div><div class="tip-text">Place a water bottle on your desk, bedside table, and in your bag. Out of sight really is out of mind with hydration.</div></div>
+    <div class="tip-card"><span class="tip-icon">🍉</span><div class="tip-title">Eat your water too</div><div class="tip-text">Watermelon, cucumber, oranges, and strawberries are 85–95% water. They count! So do herbal teas and coconut water.</div></div>
+  </div>
+</div>
+</section>
 
-</div><!-- /container -->
+<!-- ── FOOTER ── -->
+<footer>
+  <div style="font-size:32px;margin-bottom:10px">💧</div>
+  <p>Made with care to help you feel your best.</p>
+  <p style="margin-top:6px">Stay hydrated — your body will <strong>thank you</strong> for it.</p>
+</footer>
+
+</div><!-- /page -->
 
 <script>
-  const bottles = [
-    { label: 'Glass',      ml: 200,  fill: '#378ADD' },
-    { label: 'Small',      ml: 330,  fill: '#5DCAA5' },
-    { label: 'Medium',     ml: 500,  fill: '#378ADD' },
-    { label: 'Sport',      ml: 600,  fill: '#5DCAA5' },
-    { label: 'Large',      ml: 750,  fill: '#378ADD' },
-    { label: '1 Litre',    ml: 1000, fill: '#5DCAA5' },
-    { label: '1.5 Litre',  ml: 1500, fill: '#378ADD' },
-    { label: '2 Litre',    ml: 2000, fill: '#5DCAA5' },
-  ];
+// ── FLOATING DROPS ──
+const dropContainer=document.getElementById('floatDrops');
+for(let i=0;i<12;i++){
+  const d=document.createElement('div');d.className='fdrop';d.textContent='💧';
+  d.style.left=Math.random()*100+'vw';
+  d.style.animationDuration=(10+Math.random()*20)+'s';
+  d.style.animationDelay=(Math.random()*20)+'s';
+  d.style.fontSize=(12+Math.random()*14)+'px';
+  dropContainer.appendChild(d);
+}
 
-  let entries = [];
-  let goal = 2500;
+// ── BOTTLES ──
+const bottles=[
+  {label:'Glass',ml:200,fill:'#378ADD',fillPct:0.4},
+  {label:'Small',ml:330,fill:'#5DCAA5',fillPct:0.45},
+  {label:'Medium',ml:500,fill:'#378ADD',fillPct:0.5},
+  {label:'Sport',ml:600,fill:'#5DCAA5',fillPct:0.55},
+  {label:'Large',ml:750,fill:'#378ADD',fillPct:0.6},
+  {label:'1 Litre',ml:1000,fill:'#5DCAA5',fillPct:0.7},
+  {label:'1.5 L',ml:1500,fill:'#378ADD',fillPct:0.8},
+  {label:'2 Litre',ml:2000,fill:'#5DCAA5',fillPct:0.9},
+];
 
-  function bottleSVG(fill, pct) {
-    const totalH = 36;
-    const filled = Math.round(totalH * Math.min(1, pct));
-    const yFill = 14 + totalH - filled;
-    const uid = fill.replace('#', '') + Math.random().toString(36).slice(2,6);
-    return `<svg width="40" height="58" viewBox="0 0 40 58" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="13" y="2" width="14" height="9" rx="3" fill="#B5D4F4"/>
-      <rect x="4" y="11" width="32" height="43" rx="9" fill="#E6F1FB" stroke="#B5D4F4" stroke-width="1"/>
-      <clipPath id="c${uid}"><rect x="4" y="${yFill}" width="32" height="${filled}" rx="7"/></clipPath>
-      <rect x="4" y="11" width="32" height="43" rx="9" fill="${fill}" opacity="0.75" clip-path="url(#c${uid})"/>
-      <rect x="8" y="15" width="6" height="22" rx="3" fill="rgba(255,255,255,0.25)"/>
-    </svg>`;
-  }
+function makeSVG(fill,pct){
+  const totalH=34,filled=Math.round(totalH*pct),yFill=13+totalH-filled;
+  const uid='b'+Math.random().toString(36).slice(2,8);
+  return`<svg width="38" height="56" viewBox="0 0 38 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="13" y="2" width="12" height="8" rx="3" fill="#B5D4F4"/>
+    <rect x="3" y="10" width="32" height="42" rx="9" fill="#EEF6FF" stroke="#C3DCEF" stroke-width="1.2"/>
+    <defs><clipPath id="${uid}"><rect x="3" y="${yFill}" width="32" height="${filled+9}" rx="7"/></clipPath></defs>
+    <rect x="3" y="10" width="32" height="42" rx="9" fill="${fill}" opacity="0.75" clip-path="url(#${uid})"/>
+    <rect x="7" y="14" width="5" height="20" rx="2.5" fill="rgba(255,255,255,0.28)"/>
+    <rect x="3" y="10" width="32" height="42" rx="9" stroke="#C3DCEF" stroke-width="1.2"/>
+  </svg>`;
+}
 
-  function totalMl() { return entries.reduce((s, e) => s + e.ml, 0); }
+let entries=[],goal=2500;
 
-  function render() {
-    const tot = totalMl();
-    const pct = Math.min(1, tot / goal);
+function totalMl(){return entries.reduce((s,e)=>s+e.ml,0)}
 
-    document.getElementById('intakeDisplay').innerHTML = tot + ' <span>ml</span>';
-    document.getElementById('trackFill').style.width = (pct * 100) + '%';
-    document.getElementById('pctLabel').textContent = Math.round(pct * 100) + '% of goal';
-    document.getElementById('goalLabel').textContent = 'Goal: ' + goal + ' ml';
-    const rem = Math.max(0, goal - tot);
-    document.getElementById('remaining').textContent = rem > 0 ? rem + ' ml to go' : '🎯 Goal reached!';
-    document.getElementById('congrats').style.display = pct >= 1 ? 'block' : 'none';
+function render(){
+  const tot=totalMl(),pct=Math.min(1,tot/goal);
+  document.getElementById('intakeDisplay').innerHTML=tot+'<span class="intake-unit">ml</span>';
+  document.getElementById('trackFill').style.width=(pct*100)+'%';
+  document.getElementById('pctLabel').textContent=Math.round(pct*100)+'%';
+  document.getElementById('goalLbl').textContent='Goal: '+goal+' ml';
+  const rem=Math.max(0,goal-tot);
+  document.getElementById('remaining').textContent=rem>0?rem+' ml':'Done! 🎉';
+  document.getElementById('celebration').style.display=pct>=1?'block':'none';
 
-    // Render bottle grid
-    const grid = document.getElementById('bottlesGrid');
-    grid.innerHTML = '';
-    bottles.forEach(b => {
-      const btn = document.createElement('button');
-      btn.className = 'bottle-btn';
-      btn.innerHTML = `<div class="bottle-svg-wrap">${bottleSVG(b.fill, 0.45)}</div>
-        <div class="bottle-name">${b.label}</div>
-        <div class="bottle-ml-label">${b.ml} ml</div>`;
-      btn.onclick = () => addEntry(b.ml, b.label);
-      grid.appendChild(btn);
-    });
-
-    // Render log
-    const list = document.getElementById('logList');
-    if (entries.length === 0) {
-      list.innerHTML = '<div class="log-empty">No entries yet — start drinking! 💧</div>';
-      return;
-    }
-    list.innerHTML = '';
-    const logDiv = document.createElement('div');
-    logDiv.className = 'log-list';
-    [...entries].reverse().forEach((e, ri) => {
-      const i = entries.length - 1 - ri;
-      const item = document.createElement('div');
-      item.className = 'log-item';
-      item.innerHTML = `
-        <div class="log-item-left">
-          <div class="log-dot"></div>
-          <span class="log-item-ml">+${e.ml} ml</span>
-          <span class="log-item-meta">${e.label ? e.label + ' · ' : ''}${e.time}</span>
-        </div>
-        <button class="log-item-del" onclick="deleteEntry(${i})" title="Remove">✕</button>`;
-      logDiv.appendChild(item);
-    });
-    list.appendChild(logDiv);
-  }
-
-  function addEntry(ml, label) {
-    const now = new Date();
-    const t = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    entries.push({ ml, label: label || '', time: t });
-    render();
-  }
-
-  function addCustom() {
-    const v = parseInt(document.getElementById('customMl').value);
-    if (!v || v < 10 || v > 3000) return;
-    addEntry(v, 'Custom');
-    document.getElementById('customMl').value = '';
-  }
-
-  function deleteEntry(i) { entries.splice(i, 1); render(); }
-  function clearAll() { entries = []; render(); }
-
-  document.getElementById('goalInput').addEventListener('input', function () {
-    const v = parseInt(this.value);
-    if (v >= 500 && v <= 6000) { goal = v; render(); }
+  // bottles
+  const grid=document.getElementById('bottlesGrid');grid.innerHTML='';
+  bottles.forEach(b=>{
+    const btn=document.createElement('button');btn.className='bottle-btn ripple-wrap';
+    btn.innerHTML=makeSVG(b.fill,b.fillPct)+`<div class="bottle-name">${b.label}</div><div class="bottle-ml">${b.ml} ml</div>`;
+    btn.onclick=e=>{addRipple(btn,e);btn.classList.add('clicked');setTimeout(()=>btn.classList.remove('clicked'),350);addEntry(b.ml,b.label)};
+    grid.appendChild(btn);
   });
 
-  document.getElementById('customMl').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') addCustom();
-  });
+  // log
+  const list=document.getElementById('logList');
+  document.getElementById('logStats').textContent=entries.length+' entr'+(entries.length===1?'y':'ies')+' · '+tot+' ml total';
+  if(!entries.length){list.innerHTML='<div class="log-empty">No entries yet — tap a bottle or add a custom amount! 💧</div>';return;}
+  list.innerHTML='';
+  const ld=document.createElement('div');ld.className='log-list';
+  [...entries].reverse().forEach((e,ri)=>{
+    const i=entries.length-1-ri;
+    const d=document.createElement('div');d.className='log-item';
+    d.innerHTML=`<div class="log-left"><span class="log-badge">+${e.ml} ml</span><span class="log-label">${e.label||'Custom'}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="log-time">${e.time}</span><button class="log-del" onclick="deleteEntry(${i})">✕</button></div>`;
+    ld.appendChild(d);
+  });list.appendChild(ld);
+}
 
-  render();
+function addEntry(ml,label){
+  const now=new Date();
+  const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  entries.push({ml,label:label||'Custom',time:t});render();
+}
+function addCustom(e){
+  const v=parseInt(document.getElementById('customMl').value);
+  if(!v||v<10||v>3000)return;
+  if(e)addRipple(e.currentTarget,e);
+  addEntry(v,'Custom');document.getElementById('customMl').value='';
+}
+function deleteEntry(i){entries.splice(i,1);render();}
+function clearAll(){if(entries.length&&confirm('Clear all entries for today?')){entries=[];render();}}
+
+document.getElementById('goalInput').addEventListener('input',function(){
+  const v=parseInt(this.value);if(v>=500&&v<=6000){goal=v;render();}
+});
+document.getElementById('customMl').addEventListener('keydown',e=>{if(e.key==='Enter')addCustom(e)});
+
+function addRipple(el,e){
+  const rect=el.getBoundingClientRect();
+  const r=document.createElement('span');r.className='ripple';
+  const size=Math.max(rect.width,rect.height)*2;
+  r.style.cssText=`width:${size}px;height:${size}px;left:${(e.clientX||rect.left+rect.width/2)-rect.left-size/2}px;top:${(e.clientY||rect.top+rect.height/2)-rect.top-size/2}px`;
+  el.appendChild(r);setTimeout(()=>r.remove(),600);
+}
+
+// ── CAROUSEL ──
+const slides=[
+  {img:'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=900&q=80',emoji:'🧠',stat:'75%',label:'Brain is water',text:'Your brain is three-quarters water. Even mild dehydration of 1–2% impairs concentration, memory, decision-making, and mood. Drink up for sharper thinking!'},
+  {img:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&q=80',emoji:'⚡',stat:'+30%',label:'Metabolism boost',text:'Drinking 500 ml of water can boost your metabolic rate by up to 30% for ~40 minutes, helping your body burn more calories throughout the day.'},
+  {img:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=900&q=80',emoji:'💪',stat:'79%',label:'Muscles are water',text:'Your muscles are nearly 80% water. Staying hydrated prevents cramps, keeps joints lubricated, boosts endurance, and dramatically speeds up muscle recovery.'},
+  {img:'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=900&q=80',emoji:'✨',stat:'64%',label:'Skin is water',text:'Skin is 64% water. Drinking enough keeps it elastic, plump, and radiant. Dehydrated skin looks dull, feels tight, and shows wrinkles and fine lines much sooner.'},
+  {img:'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=900&q=80',emoji:'🩸',stat:'90%',label:'Blood is water',text:'Your blood is about 90% water, carrying oxygen, nutrients, and hormones to every single cell in your body. Without enough water, circulation slows and energy drops.'},
+  {img:'https://images.unsplash.com/photo-1552508744-1696d4464960?w=900&q=80',emoji:'🌡️',stat:'37°C',label:'Body temperature',text:'Water regulates your core body temperature through perspiration and respiration. Without adequate hydration, your body struggles to stay cool — especially in heat or exercise.'},
+  {img:'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=900&q=80',emoji:'🫀',stat:'200L',label:'Kidneys filter daily',text:'Your kidneys filter around 200 litres of blood every single day, flushing out toxins and waste through urine. They need plenty of water to do this job properly.'},
+  {img:'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=900&q=80',emoji:'😴',stat:'500ml',label:'Lost while sleeping',text:'You lose up to 500 ml of water overnight just through breathing and sweating. That first glass of water every morning is literally replenishing what sleep took from you.'},
+];
+
+let currentSlide=0,autoTimer=null;
+
+function buildCarousel(){
+  const track=document.getElementById('carouselTrack');
+  const dots=document.getElementById('carouselDots');
+  track.innerHTML='';dots.innerHTML='';
+  slides.forEach((s,i)=>{
+    const div=document.createElement('div');div.className='carousel-slide'+(i===0?' active':'');
+    div.innerHTML=`<img src="${s.img}" alt="${s.label}" loading="lazy"/>
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <span class="slide-emoji">${s.emoji}</span>
+        <div class="slide-stat">${s.stat}</div>
+        <div class="slide-label">${s.label}</div>
+        <div class="slide-text">${s.text}</div>
+      </div>`;
+    track.appendChild(div);
+    const dot=document.createElement('button');dot.className='dot'+(i===0?' active':'');
+    dot.onclick=()=>goToSlide(i);
+    dots.appendChild(dot);
+  });
+}
+
+function goToSlide(n){
+  const all=document.querySelectorAll('.carousel-slide');
+  const dots=document.querySelectorAll('.dot');
+  all[currentSlide].classList.remove('active');
+  dots[currentSlide].classList.remove('active');
+  currentSlide=(n+slides.length)%slides.length;
+  all[currentSlide].classList.add('active');
+  dots[currentSlide].classList.add('active');
+  resetTimer();
+}
+function moveCarousel(dir){goToSlide(currentSlide+dir)}
+function resetTimer(){clearInterval(autoTimer);autoTimer=setInterval(()=>moveCarousel(1),4500)}
+
+buildCarousel();
+resetTimer();
+render();
 </script>
 </body>
 </html>
+
