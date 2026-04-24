@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Water Tracker — FlowState</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+/* WATER-SPECIFIC */
+.progress-hero{
+  background:linear-gradient(160deg,var(--ink) 0%,var(--ocean) 60%,var(--sage) 100%);
+  border-radius:var(--r-lg); padding:2.5rem; margin-bottom:1.5rem;
+  position:relative; overflow:hidden; color:#fff;
+}
+.progress-hero::after{
+  content:''; position:absolute; top:-60px; right:-60px;
+  width:250px; height:250px;
+  background:radial-gradient(circle,rgba(255,255,255,0.07),transparent);
+  border-radius:50%;
+}
+.water-big{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(56px,10vw,88px); font-weight:300;
+  line-height:1; letter-spacing:-3px; color:#fff;
+}
+.water-big span{font-size:24px; font-weight:300; opacity:0.7; letter-spacing:0}
+.water-sub{font-size:14px; opacity:0.65; margin-top:4px; font-weight:400}
+.water-pct{
+  font-family:'Cormorant Garamond',serif;
+  font-size:52px; font-weight:300; color:rgba(255,255,255,0.5);
+  position:absolute; top:2rem; right:2.5rem; letter-spacing:-2px;
+}
+.track-outer{height:24px; border-radius:99px; background:rgba(255,255,255,0.15); overflow:hidden; margin:1.5rem 0 0.5rem; position:relative}
+.track-inner{
+  height:100%; border-radius:99px;
+  background:linear-gradient(90deg,rgba(255,255,255,0.6),rgba(255,255,255,0.9));
+  transition:width 0.7s cubic-bezier(.34,1.56,.64,1);
+  position:relative;
+}
+.track-inner::after{content:''; position:absolute; top:4px; left:12px; right:12px; height:5px; border-radius:99px; background:rgba(255,255,255,0.4)}
+.track-label{font-size:12px; opacity:0.6; display:flex; justify-content:space-between}
+
+/* GOAL INPUT */
+.goal-strip{
+  display:flex; align-items:center; gap:12px;
+  background:var(--sand); border:1px solid var(--border); border-radius:14px;
+  padding:12px 18px; margin-bottom:1.5rem; flex-wrap:wrap;
+}
+.goal-strip label{font-size:13px; font-weight:700; color:var(--ocean); white-space:nowrap}
+.goal-strip input{
+  width:100px; padding:7px 12px; border:1px solid var(--border); border-radius:8px;
+  font-size:14px; font-family:'DM Sans',sans-serif; font-weight:600;
+  color:var(--text); background:#fff; outline:none; transition:border-color 0.15s;
+}
+.goal-strip input:focus{border-color:var(--ocean-lt)}
+.goal-strip .hint{font-size:12px; color:var(--text-muted); font-style:italic}
+
+/* BOTTLES GRID */
+.bottles-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(105px,1fr)); gap:10px; margin-bottom:1.5rem}
+.bottle-btn{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+  padding:16px 8px 13px; cursor:pointer;
+  transition:all 0.2s cubic-bezier(.34,1.56,.64,1);
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  position:relative; overflow:hidden;
+}
+.bottle-btn:hover{border-color:var(--ocean-mid); background:rgba(46,134,171,0.05); transform:translateY(-4px); box-shadow:var(--shadow)}
+.bottle-btn:active{transform:scale(0.95)}
+.bottle-btn.pop{animation:bottlePop 0.35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bottlePop{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.b-name{font-size:11px; font-weight:700; color:var(--ink)}
+.b-ml{font-size:10px; color:var(--text-muted); font-weight:500}
+
+/* CUSTOM ADD */
+.custom-card{padding:1.5rem}
+.custom-row{display:flex; gap:10px}
+.custom-row input{
+  flex:1; padding:12px 16px; border:1px solid var(--border);
+  border-radius:12px; font-size:15px; font-family:'DM Sans',sans-serif;
+  font-weight:600; color:var(--text); background:var(--sand-lt); outline:none;
+  transition:border-color 0.15s,box-shadow 0.15s;
+}
+.custom-row input:focus{border-color:var(--ocean-lt); box-shadow:0 0 0 3px rgba(87,184,214,0.15); background:#fff}
+.add-btn-water{
+  padding:12px 24px; background:linear-gradient(135deg,var(--ocean),var(--ocean-mid));
+  color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700;
+  cursor:pointer; font-family:'DM Sans',sans-serif;
+  transition:all 0.2s; box-shadow:0 4px 16px rgba(26,95,122,0.3); white-space:nowrap;
+}
+.add-btn-water:hover{transform:translateY(-2px); box-shadow:0 6px 24px rgba(26,95,122,0.4)}
+.add-btn-water:active{transform:scale(0.97)}
+
+/* LOG */
+.log-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem}
+.log-title-text{font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:500; color:var(--ink); letter-spacing:-0.3px}
+.log-empty{font-size:14px; color:var(--text-muted); text-align:center; padding:2rem 0; font-weight:300}
+.log-list{display:flex; flex-direction:column; gap:8px; max-height:340px; overflow-y:auto; padding-right:4px}
+.log-item{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:11px 14px; background:var(--sand-lt);
+  border-radius:12px; border:1px solid var(--border);
+  animation:slideIn 0.25s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.log-left{display:flex; align-items:center; gap:10px}
+.log-badge{
+  background:linear-gradient(135deg,var(--ocean),var(--ocean-lt));
+  color:#fff; font-size:12px; font-weight:700;
+  border-radius:8px; padding:3px 10px;
+}
+.log-meta{font-size:12px; color:var(--text-muted); font-weight:500}
+.log-del{background:none; border:none; cursor:pointer; font-size:13px; color:var(--mist-dark); padding:3px 6px; border-radius:6px; transition:all 0.15s}
+.log-del:hover{color:var(--red); background:rgba(192,57,43,0.08)}
+
+/* HISTORY */
+.history-day{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+  padding:1.25rem; margin-bottom:10px;
+}
+.history-day-header{display:flex; justify-content:space-between; align-items:center}
+.history-date{font-size:14px; font-weight:600; color:var(--ink)}
+.history-ml{font-family:'Cormorant Garamond',serif; font-size:22px; color:var(--ocean); font-weight:500}
+.history-bar{height:6px; border-radius:99px; background:var(--border); overflow:hidden; margin-top:8px}
+.history-fill{height:100%; border-radius:99px; background:linear-gradient(90deg,var(--ocean),var(--ocean-lt))}
+
+/* CELEBRATION */
+.celebration{
+  display:none; background:linear-gradient(135deg,#e8f8f2,#d4eef5);
+  border:1px solid var(--sage-lt); border-radius:var(--r);
+  padding:1.5rem; margin-bottom:1.25rem; text-align:center;
+  animation:popIn 0.5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
+.celebration-emoji{font-size:40px; display:block; margin-bottom:8px}
+.celebration p{font-size:15px; font-weight:600; color:var(--sage)}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="index.html"><span class="drop">💧</span> FlowState</a>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span><span>Home</span></a>
+    <a class="nav-link active" href="water.html"><span class="nav-icon">💧</span><span>Water</span></a>
+    <a class="nav-link" href="habits.html"><span class="nav-icon">📅</span><span>Habits</span></a>
+  </div>
+</nav>
+
+<div style="padding-bottom:4rem">
+<div class="container">
+
+  <div class="page-header">
+    <div class="eyebrow">Daily hydration</div>
+    <h1 class="page-title">Water <em>tracker</em></h1>
+    <p class="page-sub">Log every sip. Watch your progress. Your cells are counting on you.</p>
+  </div>
+
+  <!-- QUOTE -->
+  <div class="quote-banner fade-up fade-up-1" id="quoteBanner"></div>
+
+  <!-- GOAL -->
+  <div class="goal-strip fade-up fade-up-2">
+    <label for="goalInput">🎯 Daily Goal</label>
+    <input type="number" id="goalInput" value="2500" min="500" max="6000" step="50"/>
+    <span style="font-size:13px;color:var(--text-muted);font-weight:600">ml</span>
+    <span class="hint">Recommended: 2000–3000 ml / day</span>
+  </div>
+
+  <!-- PROGRESS HERO -->
+  <div class="progress-hero fade-up fade-up-2">
+    <div class="water-pct" id="waterPct">0%</div>
+    <div class="water-big" id="waterBig">0<span>ml</span></div>
+    <div class="water-sub" id="waterSub">2500 ml remaining — keep going!</div>
+    <div class="track-outer">
+      <div class="track-inner" id="trackFill" style="width:0%"></div>
+    </div>
+    <div class="track-label">
+      <span>0 ml</span>
+      <span id="trackGoalLabel">2500 ml goal</span>
+    </div>
+  </div>
+
+  <!-- CELEBRATION -->
+  <div class="celebration" id="celebration">
+    <span class="celebration-emoji">🎊</span>
+    <p>You crushed your water goal today! Your brain, skin & muscles thank you.</p>
+  </div>
+
+  <!-- BOTTLES -->
+  <div class="section-label fade-up fade-up-3">⚡ Quick add — tap your bottle</div>
+  <div class="bottles-grid fade-up fade-up-3" id="bottlesGrid"></div>
+
+  <!-- CUSTOM -->
+  <div class="card custom-card fade-up fade-up-4">
+    <div class="section-label" style="margin-bottom:12px">✏️ Custom amount</div>
+    <div class="custom-row">
+      <input type="number" id="customMl" placeholder="Enter ml (e.g. 350)" min="10" max="3000"/>
+      <button class="add-btn-water ripple-host" id="addCustomBtn">+ Add</button>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="card fade-up fade-up-5">
+    <div class="log-header">
+      <div>
+        <div class="log-title-text">Today's log</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="logStats">0 entries</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="clearToday()">Clear today</button>
+    </div>
+    <div id="logList"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section-label" style="margin-top:2rem">📊 Recent history</div>
+  <div id="historyList"></div>
+
+</div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-brand">💧 FlowState</div>
+  <p>Every drop counts. Every day matters.</p>
+</footer>
+
+<script src="app.js"></script>
+<script>
+const BOTTLES = [
+  {label:'Glass',    ml:200,  fill:'#2E86AB', pct:0.40},
+  {label:'Small',    ml:330,  fill:'#57B8D6', pct:0.45},
+  {label:'Medium',   ml:500,  fill:'#2E86AB', pct:0.50},
+  {label:'Sport',    ml:600,  fill:'#6B9E78', pct:0.55},
+  {label:'Large',    ml:750,  fill:'#1A5F7A', pct:0.62},
+  {label:'1 Litre',  ml:1000, fill:'#57B8D6', pct:0.72},
+  {label:'1.5 L',    ml:1500, fill:'#2E86AB', pct:0.84},
+  {label:'2 Litre',  ml:2000, fill:'#1A5F7A', pct:0.94},
+];
+
+function bottleSVG(fill, pct) {
+  const h = 36, filled = Math.round(h * pct), yFill = 13 + h - filled;
+  const uid = 'b' + Math.random().toString(36).slice(2, 8);
+  return `<svg width="36" height="54" viewBox="0 0 36 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="12" y="2" width="12" height="7" rx="2.5" fill="#A8C8D8"/>
+    <rect x="3" y="9" width="30" height="40" rx="8" fill="#EEF6FF" stroke="#D8E8EF" stroke-width="1"/>
+    <defs><clipPath id="${uid}"><rect x="3" y="${yFill}" width="30" height="${filled+8}" rx="6"/></clipPath></defs>
+    <rect x="3" y="9" width="30" height="40" rx="8" fill="${fill}" opacity="0.72" clip-path="url(#${uid})"/>
+    <rect x="7" y="13" width="4" height="18" rx="2" fill="rgba(255,255,255,0.3)"/>
+    <rect x="3" y="9" width="30" height="40" rx="8" stroke="#D8E8EF" stroke-width="1"/>
+  </svg>`;
+}
+
+let goal = 2500;
+const td = today();
+
+function loadData() {
+  const d = Store.get('water_' + td) || { entries: [], goal: 2500 };
+  goal = d.goal || 2500;
+  document.getElementById('goalInput').value = goal;
+  return d;
+}
+function saveData(entries) {
+  Store.set('water_' + td, { entries, goal });
+}
+
+function render() {
+  const d = loadData();
+  const entries = d.entries || [];
+  const total = entries.reduce((s, e) => s + e.ml, 0);
+  const pct = Math.min(100, Math.round(total / goal * 100));
+  const rem = Math.max(0, goal - total);
+
+  document.getElementById('waterBig').innerHTML = total + '<span>ml</span>';
+  document.getElementById('waterPct').textContent = pct + '%';
+  document.getElementById('trackFill').style.width = pct + '%';
+  document.getElementById('trackGoalLabel').textContent = goal + ' ml goal';
+  document.getElementById('waterSub').textContent = rem > 0
+    ? rem + ' ml remaining — keep going!'
+    : '🎉 Goal reached! Amazing work today.';
+  document.getElementById('celebration').style.display = pct >= 100 ? 'block' : 'none';
+
+  // Bottles
+  const grid = document.getElementById('bottlesGrid');
+  grid.innerHTML = '';
+  BOTTLES.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'bottle-btn ripple-host';
+    btn.innerHTML = bottleSVG(b.fill, b.pct) + `<div class="b-name">${b.label}</div><div class="b-ml">${b.ml} ml</div>`;
+    btn.addEventListener('click', e => {
+      addRipple(btn, e);
+      btn.classList.add('pop');
+      setTimeout(() => btn.classList.remove('pop'), 350);
+      addEntry(b.ml, b.label);
+    });
+    grid.appendChild(btn);
+  });
+
+  // Log
+  document.getElementById('logStats').textContent = entries.length + ' entr' + (entries.length === 1 ? 'y' : 'ies') + ' · ' + total + ' ml total';
+  const logEl = document.getElementById('logList');
+  if (!entries.length) {
+    logEl.innerHTML = '<div class="log-empty">No entries yet — tap a bottle above to start! 💧</div>';
+  } else {
+    logEl.innerHTML = '';
+    const ul = document.createElement('div'); ul.className = 'log-list';
+    [...entries].reverse().forEach((e, ri) => {
+      const i = entries.length - 1 - ri;
+      const div = document.createElement('div'); div.className = 'log-item';
+      div.innerHTML = `<div class="log-left">
+        <span class="log-badge">+${e.ml} ml</span>
+        <span class="log-meta">${e.label} · ${e.time}</span>
+      </div>
+      <button class="log-del" onclick="deleteEntry(${i})">✕</button>`;
+      ul.appendChild(div);
+    });
+    logEl.appendChild(ul);
+  }
+
+  renderHistory();
+}
+
+function addEntry(ml, label) {
+  const d = loadData();
+  d.entries.push({ ml, label: label || 'Custom', time: fmtTime() });
+  saveData(d.entries);
+  render();
+  showToast(`+${ml} ml added`, 'success');
+}
+
+function deleteEntry(i) {
+  const d = loadData();
+  d.entries.splice(i, 1);
+  saveData(d.entries);
+  render();
+}
+
+function clearToday() {
+  if (!confirm('Clear all entries for today?')) return;
+  saveData([]);
+  render();
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  const days = [];
+  const now = new Date();
+  for (let i = 1; i <= 7; i++) {
+    const d2 = new Date(now); d2.setDate(now.getDate() - i);
+    const iso = d2.toISOString().slice(0, 10);
+    const data = Store.get('water_' + iso);
+    if (data && data.entries && data.entries.length) {
+      const total = data.entries.reduce((s, e) => s + e.ml, 0);
+      const g = data.goal || 2500;
+      days.push({ iso, total, goal: g, pct: Math.min(100, Math.round(total / g * 100)) });
+    }
+  }
+  if (!days.length) {
+    el.innerHTML = '<div style="font-size:14px;color:var(--text-muted);padding:1rem 0;text-align:center">No history yet — keep logging! 🌊</div>';
+    return;
+  }
+  el.innerHTML = days.map(d => `
+    <div class="history-day">
+      <div class="history-day-header">
+        <div>
+          <div class="history-date">${fmtDate(d.iso)}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${d.pct >= 100 ? '✅ Goal reached' : d.pct + '% of goal'}</div>
+        </div>
+        <div class="history-ml">${d.total} ml</div>
+      </div>
+      <div class="history-bar"><div class="history-fill" style="width:${d.pct}%"></div></div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('goalInput').addEventListener('input', function() {
+  const v = parseInt(this.value);
+  if (v >= 500 && v <= 6000) {
+    goal = v;
+    const d = loadData();
+    Store.set('water_' + td, { entries: d.entries, goal: v });
+    render();
+  }
+});
+
+document.getElementById('addCustomBtn').addEventListener('click', e => {
+  const v = parseInt(document.getElementById('customMl').value);
+  if (!v || v < 10 || v > 3000) { showToast('Enter a valid amount (10–3000 ml)', 'error'); return; }
+  addRipple(e.currentTarget, e);
+  addEntry(v, 'Custom');
+  document.getElementById('customMl').value = '';
+});
+
+document.getElementById('customMl').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('addCustomBtn').click(); });
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderQuoteBanner('quoteBanner');
+  render();
+});
+</script>
+</body>
+</html>

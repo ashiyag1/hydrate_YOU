@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Habit Tracker — FlowState</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+/* HABITS-SPECIFIC */
+
+/* HABIT MANAGER */
+.habits-manager{display:grid; grid-template-columns:1fr 1fr; gap:1.25rem}
+@media(max-width:660px){.habits-manager{grid-template-columns:1fr}}
+
+/* CREATE FORM */
+.create-form{display:flex; flex-direction:column; gap:10px}
+.icon-picker{display:flex; flex-wrap:wrap; gap:6px; padding:10px; background:var(--sand-lt); border:1px solid var(--border); border-radius:12px; max-height:130px; overflow-y:auto}
+.icon-btn{
+  font-size:20px; width:36px; height:36px; border-radius:8px; border:1.5px solid transparent;
+  background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all 0.15s;
+}
+.icon-btn:hover{background:var(--mist); transform:scale(1.1)}
+.icon-btn.selected{border-color:var(--ocean-mid); background:rgba(46,134,171,0.1)}
+
+/* HABIT LIST */
+.habit-item{
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; background:var(--sand-lt);
+  border:1px solid var(--border); border-radius:12px;
+  margin-bottom:8px; transition:all 0.2s;
+}
+.habit-item:hover{border-color:var(--ocean-lt); background:var(--mist)}
+.habit-color-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0}
+.habit-item-icon{font-size:18px}
+.habit-item-name{font-size:14px; font-weight:600; color:var(--ink); flex:1}
+.habit-item-streak{font-size:11px; color:var(--gold); font-weight:700}
+
+/* TODAY CHECK */
+.today-section{}
+.today-heading{font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:500; color:var(--ink); margin-bottom:4px; letter-spacing:-0.3px}
+.today-date{font-size:13px; color:var(--text-muted); margin-bottom:1.25rem; font-weight:400}
+.check-item{
+  display:flex; align-items:center; gap:14px;
+  padding:14px 16px; background:var(--surface);
+  border:1.5px solid var(--border); border-radius:16px;
+  margin-bottom:10px; cursor:pointer; transition:all 0.2s; position:relative;
+  overflow:hidden;
+}
+.check-item:hover{border-color:var(--ocean-lt); box-shadow:var(--shadow-sm)}
+.check-item.checked{background:linear-gradient(135deg,rgba(107,158,120,0.08),rgba(168,197,160,0.06)); border-color:var(--sage-lt)}
+.check-box{
+  width:28px; height:28px; border-radius:8px; flex-shrink:0;
+  border:2px solid var(--border); background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.25s cubic-bezier(.34,1.56,.64,1);
+  font-size:14px;
+}
+.check-item.checked .check-box{background:var(--sage); border-color:var(--sage); color:#fff; transform:scale(1.1)}
+.check-label{font-size:15px; font-weight:600; color:var(--ink); flex:1}
+.check-item.checked .check-label{text-decoration:line-through; color:var(--text-muted)}
+.check-icon{font-size:22px}
+.check-streak{font-size:11px; color:var(--gold); font-weight:700; white-space:nowrap}
+.check-time{font-size:11px; color:var(--sage); margin-top:2px}
+.check-item .ripple-el{background:rgba(107,158,120,0.2)}
+
+/* CALENDAR */
+.calendar-card{margin-top:2rem}
+.cal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem}
+.cal-title{font-family:'Cormorant Garamond',serif; font-size:24px; font-weight:500; color:var(--ink)}
+.cal-nav{display:flex; gap:6px}
+.cal-nav-btn{
+  width:32px; height:32px; border:1px solid var(--border); border-radius:8px;
+  background:var(--sand-lt); cursor:pointer; font-size:14px; color:var(--text-muted);
+  display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+}
+.cal-nav-btn:hover{border-color:var(--ocean-lt); color:var(--ocean); background:var(--mist)}
+
+/* HABIT FILTER */
+.habit-filter{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem}
+.filter-chip{
+  padding:5px 14px; border-radius:99px; font-size:12px; font-weight:600;
+  border:1px solid var(--border); background:var(--sand-lt); color:var(--text-muted);
+  cursor:pointer; transition:all 0.15s;
+}
+.filter-chip.active{border-color:var(--ocean-mid); background:rgba(46,134,171,0.1); color:var(--ocean)}
+.filter-chip:hover{border-color:var(--ocean-lt)}
+
+/* CALENDAR GRID */
+.cal-weekdays{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:4px}
+.cal-weekday{font-size:11px; font-weight:700; color:var(--text-muted); text-align:center; padding:4px 0; letter-spacing:0.04em}
+.cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
+.cal-cell{
+  aspect-ratio:1; border-radius:10px; border:1px solid transparent;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; transition:all 0.15s; position:relative; overflow:hidden;
+  font-size:12px; font-weight:600; color:var(--text-muted); background:var(--sand-lt);
+}
+.cal-cell:hover{border-color:var(--ocean-lt); background:var(--mist)}
+.cal-cell.today{border-color:var(--ocean-mid); color:var(--ocean); font-weight:700; background:rgba(46,134,171,0.06)}
+.cal-cell.other-month{opacity:0.35}
+.cal-cell.empty{background:transparent; border-color:transparent; cursor:default}
+.cal-cell .date-num{line-height:1}
+.cal-dots{display:flex; gap:2px; flex-wrap:wrap; justify-content:center; margin-top:3px; max-width:90%}
+.cal-dot{width:5px; height:5px; border-radius:50%; flex-shrink:0}
+.cal-cell.full-done{background:rgba(107,158,120,0.15); border-color:var(--sage-lt)}
+
+/* LEGEND */
+.legend{display:flex; gap:12px; flex-wrap:wrap; margin-top:1rem}
+.legend-item{display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-muted)}
+.legend-dot{width:10px; height:10px; border-radius:50%}
+
+/* STATS ROW */
+.stats-row{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:1.5rem}
+@media(max-width:480px){.stats-row{grid-template-columns:1fr 1fr}}
+.mini-stat{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1rem; text-align:center}
+.mini-stat-num{font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:500; color:var(--ink)}
+.mini-stat-label{font-size:11px; color:var(--text-muted); font-weight:600; margin-top:2px}
+
+/* COLOR PICKER */
+.color-picker{display:flex; gap:8px; flex-wrap:wrap}
+.color-swatch{
+  width:24px; height:24px; border-radius:50%; cursor:pointer;
+  border:2px solid transparent; transition:all 0.15s;
+}
+.color-swatch.selected{border-color:var(--ink); transform:scale(1.2)}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(13,31,45,0.5);
+  z-index:2000; display:none; align-items:center; justify-content:center;
+  padding:1rem; backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--surface); border-radius:var(--r-lg); padding:2rem;
+  max-width:420px; width:100%; box-shadow:var(--shadow-lg);
+  animation:modalIn 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes modalIn{from{transform:scale(0.9) translateY(20px);opacity:0}to{transform:none;opacity:1}}
+.modal-title{font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:500; margin-bottom:1.25rem; color:var(--ink)}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="index.html"><span class="drop">💧</span> FlowState</a>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html"><span class="nav-icon">🏠</span><span>Home</span></a>
+    <a class="nav-link" href="water.html"><span class="nav-icon">💧</span><span>Water</span></a>
+    <a class="nav-link active" href="habits.html"><span class="nav-icon">📅</span><span>Habits</span></a>
+  </div>
+</nav>
+
+<div style="padding-bottom:4rem">
+<div class="container">
+
+  <div class="page-header">
+    <div class="eyebrow">Build consistency</div>
+    <h1 class="page-title">Habit <em>calendar</em></h1>
+    <p class="page-sub">Create your own habits, check them off daily, and watch your streaks grow.</p>
+  </div>
+
+  <!-- QUOTE -->
+  <div class="quote-banner fade-up fade-up-1" id="quoteBanner"></div>
+
+  <!-- STATS -->
+  <div class="stats-row fade-up fade-up-2">
+    <div class="mini-stat">
+      <div class="mini-stat-num" id="statHabits">0</div>
+      <div class="mini-stat-label">Total Habits</div>
+    </div>
+    <div class="mini-stat">
+      <div class="mini-stat-num" id="statDoneToday">0</div>
+      <div class="mini-stat-label">Done Today</div>
+    </div>
+    <div class="mini-stat">
+      <div class="mini-stat-num" id="statBestStreak">0🔥</div>
+      <div class="mini-stat-label">Best Streak</div>
+    </div>
+  </div>
+
+  <!-- TODAY CHECK-IN -->
+  <div class="card fade-up fade-up-2">
+    <div class="today-heading">Today's check-in</div>
+    <div class="today-date" id="todayDate"></div>
+    <div id="checkList"></div>
+    <div id="noHabitsMsg" style="display:none;text-align:center;padding:1.5rem 0;color:var(--text-muted);font-size:14px">
+      No habits yet. Create your first habit below! ↓
+    </div>
+  </div>
+
+  <!-- HABITS MANAGER -->
+  <div class="habits-manager fade-up fade-up-3">
+    <!-- CREATE -->
+    <div class="card">
+      <div class="card-title">✦ Create a habit</div>
+      <div class="card-sub">Add a new daily habit to track</div>
+      <div class="create-form">
+        <div>
+          <div class="label">Habit name</div>
+          <input class="input" type="text" id="habitName" placeholder="e.g. Morning walk, Meditate…" maxlength="40"/>
+        </div>
+        <div>
+          <div class="label">Pick an icon</div>
+          <div class="icon-picker" id="iconPicker"></div>
+        </div>
+        <div>
+          <div class="label">Color</div>
+          <div class="color-picker" id="colorPicker"></div>
+        </div>
+        <button class="btn btn-primary ripple-host" id="createHabitBtn" style="width:100%;justify-content:center">＋ Add Habit</button>
+      </div>
+    </div>
+
+    <!-- HABIT LIST -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div>
+          <div class="card-title">Your habits</div>
+          <div class="card-sub" style="margin-bottom:0">Tap to edit or delete</div>
+        </div>
+      </div>
+      <div id="habitsList"></div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="card calendar-card fade-up fade-up-4">
+    <div class="cal-header">
+      <div class="cal-title" id="calTitle">April 2025</div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)">←</button>
+        <button class="cal-nav-btn" onclick="changeMonth(1)">→</button>
+      </div>
+    </div>
+
+    <!-- Habit filter chips -->
+    <div class="habit-filter" id="habitFilter"></div>
+
+    <div class="cal-weekdays">
+      <div class="cal-weekday">Su</div><div class="cal-weekday">Mo</div><div class="cal-weekday">Tu</div>
+      <div class="cal-weekday">We</div><div class="cal-weekday">Th</div><div class="cal-weekday">Fr</div>
+      <div class="cal-weekday">Sa</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="legend" id="calLegend"></div>
+  </div>
+
+</div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">Edit habit</div>
+    <div class="create-form" id="editForm">
+      <div>
+        <div class="label">Habit name</div>
+        <input class="input" type="text" id="editName" maxlength="40"/>
+      </div>
+      <div>
+        <div class="label">Icon</div>
+        <div class="icon-picker" id="editIconPicker"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary" style="flex:1;justify-content:center" id="editSaveBtn">Save changes</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
+      <button class="btn-danger" id="editDeleteBtn" style="width:100%;text-align:center;padding:8px;margin-top:4px">🗑 Delete this habit</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-brand">📅 FlowState</div>
+  <p>Small steps. Big change. Every day.</p>
+</footer>
+
+<script src="app.js"></script>
+<script>
+const ICONS = ['🏃','🧘','💧','📖','🌿','🍎','🏋️','✍️','🎨','🎵','🌅','🚴','🧠','💊','🥗','🛌','🧹','🌸','☀️','🦋','🎯','🧗','🏊','🍵','🛁','🌙','💪','🎤','📝','🌱','🦷','🤸','📚','🧽','💤','🫁','🧉','🎧','🏂','🤾'];
+const COLORS = ['#2E86AB','#6B9E78','#C8A96E','#B08BBF','#E87461','#F4A261','#2A9D8F','#E63946','#457B9D','#A8DADC'];
+
+let selectedIcon = ICONS[0];
+let selectedColor = COLORS[0];
+let calYear, calMonth, filterHabitId = null;
+let editingId = null, editIcon = ICONS[0];
+
+const td = today();
+
+// ── ICON PICKERS ──
+function buildIconPicker(containerId, current, onSelect) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  ICONS.forEach(ic => {
+    const b = document.createElement('button');
+    b.className = 'icon-btn' + (ic === current ? ' selected' : '');
+    b.type = 'button'; b.textContent = ic;
+    b.onclick = () => {
+      el.querySelectorAll('.icon-btn').forEach(x => x.classList.remove('selected'));
+      b.classList.add('selected');
+      onSelect(ic);
+    };
+    el.appendChild(b);
+  });
+}
+
+function buildColorPicker() {
+  const el = document.getElementById('colorPicker');
+  el.innerHTML = '';
+  COLORS.forEach(c => {
+    const s = document.createElement('div');
+    s.className = 'color-swatch' + (c === selectedColor ? ' selected' : '');
+    s.style.background = c;
+    s.title = c;
+    s.onclick = () => {
+      el.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
+      s.classList.add('selected');
+      selectedColor = c;
+    };
+    el.appendChild(s);
+  });
+}
+
+// ── HABITS CRUD ──
+function getHabits() { return Store.get('habits_list') || []; }
+function saveHabits(h) { Store.set('habits_list', h); }
+function getDone(dateIso) { return Store.get('habits_done_' + dateIso) || {}; }
+function saveDone(dateIso, d) { Store.set('habits_done_' + dateIso, d); }
+
+function getStreak(habitId) {
+  let streak = 0;
+  const d = new Date();
+  // Don't count today in streak if not done
+  for (let i = 0; i < 365; i++) {
+    const iso = d.toISOString().slice(0, 10);
+    const done = getDone(iso);
+    if (done[habitId]) { streak++; d.setDate(d.getDate() - 1); }
+    else { if (i === 0) { d.setDate(d.getDate() - 1); continue; } break; }
+  }
+  return streak;
+}
+
+function createHabit() {
+  const name = document.getElementById('habitName').value.trim();
+  if (!name) { showToast('Please enter a habit name', 'error'); return; }
+  const habits = getHabits();
+  const habit = { id: Date.now().toString(), name, icon: selectedIcon, color: selectedColor };
+  habits.push(habit);
+  saveHabits(habits);
+  document.getElementById('habitName').value = '';
+  render();
+  showToast('Habit "' + name + '" created!', 'success');
+}
+
+function renderHabitsList() {
+  const habits = getHabits();
+  const el = document.getElementById('habitsList');
+  if (!habits.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:1rem 0">No habits yet. Create one!</div>';
+    return;
+  }
+  el.innerHTML = habits.map(h => {
+    const streak = getStreak(h.id);
+    return `<div class="habit-item" onclick="openEdit('${h.id}')">
+      <div class="habit-color-dot" style="background:${h.color}"></div>
+      <span class="habit-item-icon">${h.icon}</span>
+      <span class="habit-item-name">${h.name}</span>
+      ${streak > 0 ? `<span class="habit-item-streak">🔥 ${streak}d</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── TODAY CHECK-IN ──
+function renderCheckIn() {
+  const habits = getHabits();
+  const done = getDone(td);
+  const el = document.getElementById('checkList');
+  const noMsg = document.getElementById('noHabitsMsg');
+
+  document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  if (!habits.length) { el.innerHTML = ''; noMsg.style.display = 'block'; return; }
+  noMsg.style.display = 'none';
+  el.innerHTML = '';
+
+  habits.forEach(h => {
+    const isDone = !!done[h.id];
+    const div = document.createElement('div');
+    div.className = 'check-item ripple-host' + (isDone ? ' checked' : '');
+    div.innerHTML = `
+      <span class="check-icon">${h.icon}</span>
+      <div style="flex:1">
+        <div class="check-label">${h.name}</div>
+        ${done[h.id]?.time ? `<div class="check-time">✓ Done at ${done[h.id].time}</div>` : ''}
+      </div>
+      <div class="check-box">${isDone ? '✓' : ''}</div>
+      <span class="check-streak">${getStreak(h.id) > 0 ? '🔥 ' + getStreak(h.id) : ''}</span>
+    `;
+    div.onclick = e => {
+      addRipple(div, e);
+      const d2 = getDone(td);
+      if (d2[h.id]) {
+        delete d2[h.id];
+        showToast(h.name + ' unchecked');
+      } else {
+        d2[h.id] = { time: fmtTime() };
+        showToast(h.name + ' done! ' + h.icon, 'success');
+      }
+      saveDone(td, d2);
+      render();
+    };
+    el.appendChild(div);
+  });
+}
+
+// ── STATS ──
+function renderStats() {
+  const habits = getHabits();
+  const done = getDone(td);
+  const doneCount = habits.filter(h => done[h.id]).length;
+  document.getElementById('statHabits').textContent = habits.length;
+  document.getElementById('statDoneToday').textContent = doneCount;
+  const best = habits.reduce((max, h) => Math.max(max, getStreak(h.id)), 0);
+  document.getElementById('statBestStreak').textContent = best + (best > 0 ? '🔥' : '');
+}
+
+// ── CALENDAR ──
+function renderCalendar() {
+  const habits = getHabits();
+  const now = new Date();
+  if (!calYear) { calYear = now.getFullYear(); calMonth = now.getMonth(); }
+
+  document.getElementById('calTitle').textContent = new Date(calYear, calMonth).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+  // Filter chips
+  const filterEl = document.getElementById('habitFilter');
+  filterEl.innerHTML = `<button class="filter-chip${!filterHabitId ? ' active' : ''}" onclick="setFilter(null)">All</button>`;
+  habits.forEach(h => {
+    filterEl.innerHTML += `<button class="filter-chip${filterHabitId === h.id ? ' active' : ''}" onclick="setFilter('${h.id}')">${h.icon} ${h.name}</button>`;
+  });
+
+  // Calendar grid
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  // Prev month empty cells
+  for (let i = 0; i < firstDay; i++) {
+    const d = daysInPrev - firstDay + 1 + i;
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell other-month';
+    cell.innerHTML = `<span class="date-num">${d}</span>`;
+    grid.appendChild(cell);
+  }
+
+  // This month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${calYear}-${String(calMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const done = getDone(iso);
+    const cell = document.createElement('div');
+    const isToday = iso === todayStr;
+    const relevantHabits = filterHabitId ? habits.filter(h => h.id === filterHabitId) : habits;
+    const doneHabits = relevantHabits.filter(h => done[h.id]);
+    const allDone = relevantHabits.length > 0 && doneHabits.length === relevantHabits.length;
+
+    cell.className = 'cal-cell' + (isToday ? ' today' : '') + (allDone && relevantHabits.length > 0 ? ' full-done' : '');
+    cell.title = iso;
+
+    const dots = doneHabits.slice(0, 5).map(h => `<div class="cal-dot" style="background:${h.color}"></div>`).join('');
+    cell.innerHTML = `<span class="date-num">${d}</span><div class="cal-dots">${dots}</div>`;
+    grid.appendChild(cell);
+  }
+
+  // Next month fill
+  const total = firstDay + daysInMonth;
+  const remaining = (7 - (total % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell other-month';
+    cell.innerHTML = `<span class="date-num">${i}</span>`;
+    grid.appendChild(cell);
+  }
+
+  // Legend
+  const legend = document.getElementById('calLegend');
+  legend.innerHTML = (filterHabitId ? habits.filter(h => h.id === filterHabitId) : habits).map(h =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${h.color}"></div>${h.icon} ${h.name}</div>`
+  ).join('');
+}
+
+function setFilter(id) { filterHabitId = id; renderCalendar(); }
+function changeMonth(dir) { calMonth += dir; if (calMonth > 11) { calMonth = 0; calYear++; } if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+
+// ── EDIT MODAL ──
+function openEdit(id) {
+  editingId = id;
+  const habits = getHabits();
+  const h = habits.find(x => x.id === id);
+  if (!h) return;
+  document.getElementById('editName').value = h.name;
+  editIcon = h.icon;
+  buildIconPicker('editIconPicker', editIcon, ic => { editIcon = ic; });
+  document.getElementById('editModal').classList.add('open');
+}
+function closeModal() { document.getElementById('editModal').classList.remove('open'); editingId = null; }
+
+document.getElementById('editSaveBtn').onclick = () => {
+  if (!editingId) return;
+  const name = document.getElementById('editName').value.trim();
+  if (!name) return;
+  const habits = getHabits();
+  const h = habits.find(x => x.id === editingId);
+  if (h) { h.name = name; h.icon = editIcon; saveHabits(habits); }
+  closeModal(); render(); showToast('Habit updated!', 'success');
+};
+
+document.getElementById('editDeleteBtn').onclick = () => {
+  if (!editingId) return;
+  if (!confirm('Delete this habit? This cannot be undone.')) return;
+  const habits = getHabits().filter(h => h.id !== editingId);
+  saveHabits(habits);
+  closeModal(); render(); showToast('Habit deleted');
+};
+
+document.getElementById('editModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+// ── MAIN RENDER ──
+function render() {
+  renderCheckIn();
+  renderHabitsList();
+  renderStats();
+  renderCalendar();
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  renderQuoteBanner('quoteBanner');
+  buildIconPicker('iconPicker', selectedIcon, ic => { selectedIcon = ic; });
+  buildColorPicker();
+
+  document.getElementById('createHabitBtn').addEventListener('click', e => {
+    addRipple(e.currentTarget, e);
+    createHabit();
+  });
+
+  document.getElementById('habitName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') createHabit();
+  });
+
+  render();
+});
+</script>
+</body>
+</html>
